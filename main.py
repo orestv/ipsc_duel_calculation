@@ -1,80 +1,10 @@
+from __future__ import annotations
+
 import csv
-import dataclasses
-import enum
 import random
-import sys
 
-
-class Category(str, enum.Enum):
-    GENERAL = "Загальна"
-    LADY = "Леді"
-
-
-class Class(str, enum.Enum):
-    STANDARD = "Стандарт"
-    STANDARD_MANUAL = "Стандарт-мануал"
-    MODIFIED = "Модифікований"
-    OPEN = "Відкритий"
-
-
-class Queue(str, enum.Enum):
-    STANDARD_1 = "Стандарт 1"
-    STANDARD_2 = "Стандарт 2"
-    STANDARD_MANUAL = "Стандарт-мануал"
-    MODIFIED = "Модифікований"
-    OPEN = "Відкритий"
-    Lady = "Леді"
-
-
-QUEUE_REPEATS = {
-    Queue.STANDARD_1: False,
-    Queue.STANDARD_2: False,
-    Queue.STANDARD_MANUAL: False,
-    Queue.MODIFIED: False,
-    Queue.OPEN: True,
-    Queue.Lady: True,
-}
-
-
-class Range(enum.Enum):
-    First = 1
-    Second = 2
-
-
-RANGE_QUEUES = {
-    Range.First: [Queue.STANDARD_1, Queue.Lady, Queue.STANDARD_MANUAL, ],
-    Range.Second: [Queue.STANDARD_2, Queue.MODIFIED, Queue.OPEN, ],
-}
-
-
-@dataclasses.dataclass
-class Participant:
-    number: str
-    name: str
-    status: str
-    squad: int
-    category: Category
-    clazz: Class
-
-    def __hash__(self):
-        return hash(self.number)
-
-    def __repr__(self):
-        return self.name
-
-
-@dataclasses.dataclass
-class Duel:
-    left: Participant
-    right: Participant
-
-    def __contains__(self, item):
-        if not isinstance(item, Participant):
-            return super(Duel, self).__contains__(item)
-        return item == self.left or item == self.right
-
-    def __repr__(self):
-        return f"{self.left} - {self.right} ({self.left.clazz})"
+from comp import QUEUE_REPEATS, RANGE_QUEUES, reoder_queue
+from model import Category, Class, Range, Participant, Duel, Queue
 
 
 def generate_duels(participants: list[Participant], repeat: bool) -> list[Duel]:
@@ -160,51 +90,6 @@ def build_queues(participants: list[Participant]) -> dict[Queue, list[Participan
     return queues
 
 
-def reoder_queue(queue: list[Duel]) -> list[Duel]:
-    schedule = queue[:1]
-    queue = queue[1:]
-
-    while queue:
-        delays = calculate_delays(schedule, queue)
-        _, preferred_duel = delays[-1]
-        queue.remove(preferred_duel)
-        schedule.append(preferred_duel)
-        print(delays)
-
-    return schedule
-
-
-def calculate_delays(schedule: list[Duel], queue: list[Duel]) -> list[tuple[int, Duel]]:
-    result = []
-
-    MAXWEIGHT = 100
-
-    for queued_duel in queue:
-        delay_left, delay_right = MAXWEIGHT, MAXWEIGHT
-        for delay, scheduled_duel in enumerate(reversed(schedule)):
-            if delay_left == MAXWEIGHT and scheduled_duel.left in queued_duel:
-                delay_left = delay
-            if delay_right == MAXWEIGHT and scheduled_duel.right in queued_duel:
-                delay_right = delay
-        effective_delay = delay_left + delay_right
-        effective_delay = (delay_left + delay_right, -abs(delay_left - delay_right))
-        effective_delay = max(delay_left, delay_right) - abs(delay_left - delay_right)
-        # effective_delay = max(delay_left, delay_right) - min(delay_left, delay_right)
-        result.append((effective_delay, queued_duel))
-        #     if {queued_duel.left, queued_duel.right} & {scheduled_duel.left, scheduled_duel.right}:
-        #         result.append((delay, queued_duel))
-        #         break
-        # else:
-        #     result.append((sys.maxsize, queued_duel))
-    last_scheduled_duel = schedule[-1]
-
-    random.Random().shuffle(result)
-    # result.sort(key=lambda r: (r[0], r[1].left.clazz != last_scheduled_duel.left.clazz and r[1].left.category != last_scheduled_duel.left.category))
-    result.sort(key=lambda r: r[0])
-
-    return result
-
-
 def main():
     participants = read_participants("participants.csv")
     print(len(participants))
@@ -225,10 +110,8 @@ def main():
         q = reoder_queue(q)
         print(f"{r}, {len(q)}, {q}")
         validity = assert_pairs_valid(participants, q)
-
-
 # Press the green button in the gutter to run the script.
+
 if __name__ == '__main__':
     main()
-
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
