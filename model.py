@@ -22,7 +22,7 @@ class Queue(str, enum.Enum):
     STANDARD_MANUAL = "Стандарт-мануал"
     MODIFIED = "Модифікований"
     OPEN = "Відкритий"
-    Lady = "Леді"
+    LADY = "Леді"
 
 
 class Range(enum.Enum):
@@ -51,6 +51,14 @@ class Duel:
     left: Participant
     right: Participant
 
+    @property
+    def clazz(self) -> Class:
+        return self.left.clazz
+
+    @property
+    def category(self) -> Category:
+        return self.left.category
+
     def __contains__(self, item):
         if not isinstance(item, Participant):
             return super(Duel, self).__contains__(item)
@@ -58,3 +66,6 @@ class Duel:
 
     def __repr__(self):
         return f"{self.left} - {self.right} ({self.left.clazz})"
+
+    def __iter__(self):
+        return iter([self.left, self.right])

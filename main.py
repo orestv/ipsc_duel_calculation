@@ -3,6 +3,10 @@ from __future__ import annotations
 import csv
 import random
 
+import pandas as pd
+import matplotlib.pyplot as plt
+
+
 from comp import QUEUE_REPEATS, RANGE_QUEUES, reoder_queue
 from model import Category, Class, Range, Participant, Duel, Queue
 
@@ -43,7 +47,18 @@ def assert_pairs_valid(participants: list[Participant], duels: list[Duel]) -> bo
                 delay_right = delay
         duel_delays.append(((delay_left, delay_right), duel))
 
-    print(duel_delays)
+    df = pd.DataFrame(
+        {
+            "delay_left": [delay[0] for delay, duel in duel_delays],
+            "delay_right": [delay[0] for delay, duel in duel_delays],
+        }
+    )
+    print(df.describe(include='all'))
+    df.plot(
+        kind="bar"
+    )
+    plt.show()
+    # print(duel_delays)
 
     return True
 
@@ -80,7 +95,7 @@ def build_queues(participants: list[Participant]) -> dict[Queue, list[Participan
     standard_1, standard_2 = standard[:half], standard[half:]
 
     queues = {
-        Queue.Lady: [p for p in participants if p.category == Category.LADY],
+        Queue.LADY: [p for p in participants if p.category == Category.LADY],
         Queue.MODIFIED: [p for p in men if p.clazz == Class.MODIFIED],
         Queue.OPEN: [p for p in men if p.clazz == Class.OPEN],
         Queue.STANDARD_MANUAL: [p for p in men if p.clazz == Class.STANDARD_MANUAL],
@@ -92,10 +107,7 @@ def build_queues(participants: list[Participant]) -> dict[Queue, list[Participan
 
 def main():
     participants = read_participants("participants.csv")
-    print(len(participants))
     queues = build_queues(participants)
-    for q, p in queues.items():
-        print(f"{q}: {len(p)} {p}")
 
     queue_duels = {
         queue_name: generate_duels(queue_participants, QUEUE_REPEATS[queue_name])
@@ -108,7 +120,20 @@ def main():
             range_queues[r] += queue_duels[q_name]
     for r, q in range_queues.items():
         q = reoder_queue(q)
-        print(f"{r}, {len(q)}, {q}")
+        q_items = [
+            {
+                "left_name": duel.left.name,
+                "right_name": duel.right.name,
+                "class": duel.clazz.value,
+                "category": duel.category.value,
+            }
+            for duel in q
+        ]
+        with open(f"range_{r.value}.csv", "w") as f:
+            writer = csv.DictWriter(f, q_items[0].keys())
+            writer.writeheader()
+            writer.writerows(q_items)
+
         validity = assert_pairs_valid(participants, q)
 # Press the green button in the gutter to run the script.
 

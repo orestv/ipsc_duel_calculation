@@ -5,6 +5,8 @@ name = "pypi"
 
 [packages]
 faker = "*"
+pandas = "*"
+matplotlib = "*"
 
 [dev-packages]
 
