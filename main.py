@@ -102,12 +102,12 @@ def assert_pairs_valid(participants: list[Participant], variant_name: str, duels
     print(variant_name)
     print(df.describe(include='all'))
     print("======")
-    df.plot(
-        title=variant_name,
-        kind="bar",
-        ylim=(-1, 25),
-    )
-    plt.show()
+    # df.plot(
+    #     title=variant_name,
+    #     kind="bar",
+    #     ylim=(-1, 25),
+    # )
+    # plt.show()
     # print(duel_delays)
 
     return True
@@ -215,6 +215,8 @@ def main():
         except FileExistsError:
             pass
 
+        excel_writer = pd.ExcelWriter(f"{target_dir}/pairs.xlsx")
+
         for r in Range:
             range_queues[r] = []
             for q_name in variant[r]:
@@ -231,12 +233,18 @@ def main():
                 }
                 for idx, duel in enumerate(q)
             ]
+            df = pd.DataFrame(q_items)
+            fname = f"{target_dir}/range_{r.value}.xlsx"
+            # with open(fname, "w") as f:
+            df.to_excel(excel_writer, sheet_name=f"Рубіж {r.value}")
+
             with open(f"{target_dir}/range_{r.value}.csv", "w") as f:
                 writer = csv.DictWriter(f, q_items[0].keys())
                 writer.writeheader()
                 writer.writerows(q_items)
             name = f"{variant_name} - {r}"
             validity = assert_pairs_valid(participants, name, q)
+        excel_writer.save()
 
 
 def render_class(clazz: Class, category: Category) -> str:
