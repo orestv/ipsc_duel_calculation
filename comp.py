@@ -5,6 +5,7 @@ import itertools
 
 import model
 
+
 @dataclasses.dataclass
 class DuelOrderRank:
     duel: model.Duel
@@ -20,7 +21,7 @@ class DuelOrderRank:
 
     def is_valid(self) -> bool:
         for d in (self.delay_left, self.delay_right):
-            if d is not None and d < 0.06:
+            if d is not None and d < 0.03:
                 return False
         # if abs(self.pct_completed_left - self.pct_completed_right) > 0.3:
         #     return False
@@ -50,23 +51,12 @@ class DuelOrderRank:
     def mean_pct_complete(self):
         return mean(self.pct_completed_left, self.pct_completed_right)
 
+    @property
+    def min_pct_complete(self):
+        return min(self.pct_completed_left, self.pct_completed_right)
+
     def __lt__(self, other: DuelOrderRank):
         return self.delay_left + self.delay_right > other.delay_left + other.delay_right and mean(self.pct_completed_left, self.pct_completed_right) > mean(other.pct_completed_left, other.pct_completed_right)
-
-
-QUEUE_REPEATS = {
-    model.Queue.STANDARD_1: False,
-    model.Queue.STANDARD_2: False,
-    model.Queue.STANDARD_MANUAL: False,
-    model.Queue.MODIFIED: False,
-    model.Queue.OPEN: True,
-    model.Queue.LADY: True,
-}
-
-RANGE_QUEUES = {
-    model.Range.First: [model.Queue.STANDARD_1, model.Queue.MODIFIED, model.Queue.STANDARD_MANUAL, ],
-    model.Range.Second: [model.Queue.STANDARD_2, model.Queue.LADY, model.Queue.OPEN, ],
-}
 
 
 def mean(*args) -> float:
@@ -126,19 +116,31 @@ def order_queue(schedule: list[model.Duel], queue: list[model.Duel]) -> list[Due
 
 
 def pick_preferred_duel(schedule: list[model.Duel], ranked_duels: list[DuelOrderRank]) -> model.Duel:
-    ranked_duels.sort(key=lambda r: (-r.max_delay, -r.min_delay, -r.mean_pct_complete))
-    # ranked_duels.sort(key=lambda r: (-r.max_delay, -r.min_delay, ))
-    # ranked_duels.sort(key=lambda r: -r.mean_pct_complete)
+    ranked_duels.sort(key=lambda r: (-r.max_delay, -r.min_delay, r.min_pct_complete))
+    # ranked_duels.sort(key=lambda r: (-r.min_delay, r.min_pct_complete))
+    # ranked_duels.sort(key=lambda r: (-r.max_delay, r.mean_pct_complete))
+    # ranked_duels.sort(key=lambda r: (-r.max_delay, -r.mean_delay, ))
+    # ranked_duels.sort(key=lambda r: (r.mean_pct_complete, -r.max_delay))
     # if len(schedule) > 20:
     #     breakpoint()
-    last_duels = schedule[-2:]
+    if schedule:
+        last_duel = schedule[-1]
+        if last_duel.clazz not in (model.Class.MODIFIED, model.Class.OPEN):
+            ranked_duels_of_different_classes = [
+                d for d in ranked_duels
+                if d.duel.clazz != last_duel.clazz
+            ]
+            if ranked_duels_of_different_classes:
+                ranked_duels = ranked_duels_of_different_classes
+    # last_duels = schedule[-7:]
+    # number_of_modified_duels = len([d for d in last_duels if d.clazz == model.Class.MODIFIED])
+    # if number_of_modified_duels < 3:
+    #     upcoming_modified = [
+    #         d for d in ranked_duels if d.is_valid() and d.duel.clazz == model.Class.MODIFIED
+    #     ]
+    #     if upcoming_modified:
+    #         return upcoming_modified[0].duel
     for candidate_duel in ranked_duels:
-        class_matched = [
-            (last_duel.clazz, last_duel.category) == (candidate_duel.duel.clazz, candidate_duel.duel.category)
-            for last_duel in last_duels
-        ]
-        if any(class_matched):
-            continue
 
         if not candidate_duel.is_valid():
             continue
