@@ -21,10 +21,10 @@ class DuelOrderRank:
 
     def is_valid(self) -> bool:
         for d in (self.delay_left, self.delay_right):
-            if d is not None and d < 0.03:
+            if d is not None and d < 0.04:
                 return False
-        # if abs(self.pct_completed_left - self.pct_completed_right) > 0.3:
-        #     return False
+        if abs(self.pct_completed_left - self.pct_completed_right) > 0.3:
+            return False
         return True
 
     @property
@@ -65,7 +65,7 @@ def mean(*args) -> float:
     )**0.5
 
 
-def reoder_queue(queue: list[model.Duel]) -> list[model.Duel]:
+def reorder_queue(queue: list[model.Duel]) -> list[model.Duel]:
     schedule = queue[:1]
     queue = queue[1:]
 
@@ -117,31 +117,30 @@ def order_queue(schedule: list[model.Duel], queue: list[model.Duel]) -> list[Due
 
 def pick_preferred_duel(schedule: list[model.Duel], ranked_duels: list[DuelOrderRank]) -> model.Duel:
     ranked_duels.sort(key=lambda r: (-r.max_delay, -r.min_delay, r.min_pct_complete))
-    # ranked_duels.sort(key=lambda r: (-r.min_delay, r.min_pct_complete))
-    # ranked_duels.sort(key=lambda r: (-r.max_delay, r.mean_pct_complete))
-    # ranked_duels.sort(key=lambda r: (-r.max_delay, -r.mean_delay, ))
-    # ranked_duels.sort(key=lambda r: (r.mean_pct_complete, -r.max_delay))
-    # if len(schedule) > 20:
-    #     breakpoint()
-    if schedule:
-        last_duel = schedule[-1]
-        if last_duel.clazz not in (model.Class.MODIFIED, model.Class.OPEN):
-            ranked_duels_of_different_classes = [
-                d for d in ranked_duels
-                if d.duel.clazz != last_duel.clazz
-            ]
-            if ranked_duels_of_different_classes:
-                ranked_duels = ranked_duels_of_different_classes
-    # last_duels = schedule[-7:]
-    # number_of_modified_duels = len([d for d in last_duels if d.clazz == model.Class.MODIFIED])
-    # if number_of_modified_duels < 3:
-    #     upcoming_modified = [
-    #         d for d in ranked_duels if d.is_valid() and d.duel.clazz == model.Class.MODIFIED
-    #     ]
-    #     if upcoming_modified:
-    #         return upcoming_modified[0].duel
-    for candidate_duel in ranked_duels:
+    # ranked_duels.sort(key=lambda r: (-r.max_delay, -total_ratios[r.duel.clazz]))
 
+    # upcoming_duels = [d.duel for d in ranked_duels]
+    # total_ratios = get_class_ratio(schedule + upcoming_duels)
+    # scheduled_ratios = get_class_ratio(schedule)
+    # upcoming_ratios = get_class_ratio(schedule)
+    #
+    #
+    #
+    # ratio_deltas = [
+    #     (clazz, abs(scheduled_ratios.get(clazz, 0) - total_ratios[clazz]))
+    #     for clazz, ratio in total_ratios.items()
+    # ]
+    # max_ratio_delta = max([r for _, r in ratio_deltas])
+    # missed_classes = [c for c, r in ratio_deltas if r == max_ratio_delta]
+    #
+    # class_filtered_ranked_duels = list()
+    # if missed_classes:
+    #     class_filtered_ranked_duels = [
+    #         d for d in ranked_duels
+    #         if d.duel.clazz in missed_classes
+    #     ]
+
+    for candidate_duel in ranked_duels:
         if not candidate_duel.is_valid():
             continue
 
@@ -156,3 +155,14 @@ def calculate_percentage_complete(p: model.Participant, schedule: list[model.Due
         [duel for duel in queue if p in duel]
     )
     return duels_participated / (duels_participated + duels_left)
+
+def get_class_ratio(duels: list[model.Duel]) -> dict[model.Class, float]:
+    classes = {
+        d.clazz for d in duels
+    }
+
+    result = {}
+    for c in classes:
+        ratio = len([d for d in duels if d.clazz == c]) / len(duels)
+        result[c] = ratio
+    return result
