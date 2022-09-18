@@ -5,10 +5,12 @@ import os
 import random
 
 import pandas as pd
-import matplotlib.pyplot as plt
+
+pd.options.plotting.backend = "plotly"
+# import matplotlib.pyplot as plt
 
 import model
-from comp import reoder_queue
+from comp import reorder_queue
 from model import Category, Class, Range, Participant, Duel, Queue
 
 # RANGE_QUEUES = {
@@ -37,21 +39,31 @@ QUEUE_VARIANTS = {
     #     model.Range.First: [model.Queue.STANDARD_2, model.Queue.OPEN, model.Queue.MODIFIED, ],
     #     model.Range.Second: [model.Queue.STANDARD_1, model.Queue.LADY,  model.Queue.STANDARD_MANUAL, ],
     # },
-    "final": {
-        model.Range.First: [model.Queue.STANDARD_2, model.Queue.OPEN,  model.Queue.STANDARD_MANUAL,],
-        model.Range.Second: [model.Queue.STANDARD_1, model.Queue.LADY, model.Queue.MODIFIED, ],
-    },
-    # "alternate_4": {
-    #     model.Range.First: [model.Queue.STANDARD_2, model.Queue.MODIFIED,  model.Queue.STANDARD_MANUAL, ],
-    #     model.Range.Second: [model.Queue.STANDARD_1, model.Queue.LADY, model.Queue.OPEN,],
+    # "single_tactics": {
+    #     model.Range.First: [model.Queue.STANDARD_2, model.Queue.OPEN, model.Queue.STANDARD_MANUAL, ],
+    #     model.Range.Second: [model.Queue.STANDARD_1, model.Queue.LADY, model.Queue.MODIFIED, ],
     # },
+    "single_tactics_adapted": {
+        model.Range.First: [model.Queue.STANDARD_2, model.Queue.MODIFIED, model.Queue.OPEN, ],
+        model.Range.Second: [model.Queue.STANDARD_1, model.Queue.STANDARD_MANUAL, model.Queue.LADY, ],
+    },
+    "huge_standard": {
+        model.Range.First: [model.Queue.STANDARD_2, model.Queue.STANDARD_MANUAL, model.Queue.MODIFIED,
+                            model.Queue.OPEN, ],
+        model.Range.Second: [model.Queue.STANDARD_1, model.Queue.LADY, ],
+    },
+    "huge_standard_everyone_once": {
+        model.Range.First: [model.Queue.STANDARD_2, model.Queue.STANDARD_MANUAL, model.Queue.MODIFIED,
+                            model.Queue.OPEN, ],
+        model.Range.Second: [model.Queue.STANDARD_1, model.Queue.LADY, ],
+    },
 }
 
 QUEUE_REPEATS = {
     model.Queue.STANDARD_1: False,
     model.Queue.STANDARD_2: False,
     model.Queue.STANDARD_MANUAL: False,
-    model.Queue.MODIFIED: True,
+    model.Queue.MODIFIED: False,
     model.Queue.OPEN: True,
     model.Queue.LADY: True,
 }
@@ -94,20 +106,28 @@ def assert_pairs_valid(participants: list[Participant], variant_name: str, duels
         duel_delays.append(((delay_left, delay_right), duel))
 
     df = pd.DataFrame(
-        {
-            "delay_left": [delay[0] for delay, duel in duel_delays],
-            "delay_right": [delay[0] for delay, duel in duel_delays],
-        }
+        [
+            {
+                "delay_left": delay[0],
+                "delay_right": delay[1],
+            }
+            for delay, duel in duel_delays
+        ],
+
+        # {
+        #     "delay_left": [delay[0] for delay, duel in duel_delays],
+        #     "delay_right": [delay[1] for delay, duel in duel_delays],
+        # }
     )
     print(variant_name)
     print(df.describe(include='all'))
     print("======")
-    # df.plot(
-    #     title=variant_name,
-    #     kind="bar",
-    #     ylim=(-1, 25),
-    # )
-    # plt.show()
+    fig = df.plot(
+        title=variant_name,
+        kind="bar",
+        # ylim=(-1, 25),
+    )
+    fig.show()
     # print(duel_delays)
 
     return True
@@ -152,7 +172,7 @@ def ensure_ladies_have_guns(std_1: list[Participant], std_2: list[Participant]):
 
 
 def ensure_classes_not_fucked_up(std_1: list[Participant], std_2: list[Participant]):
-    swapper_names_1 = ["Волощук", "Корсун" ]
+    swapper_names_1 = ["Волощук", "Корсун"]
     swapper_names_2 = ["Ситарський", "Кольченко", ]
 
     swappers_1 = [
@@ -174,6 +194,14 @@ def ensure_classes_not_fucked_up(std_1: list[Participant], std_2: list[Participa
         std_2.remove(right)
         std_1.append(right)
 
+
+def equalize_std(std_1: list[Participant], std_2: list[Participant]):
+    n = "Степаняк Михайло"
+    p = [x for x in std_2 if x.name == n][0]
+    std_2.remove(p)
+    std_1.append(p)
+
+
 def build_queues(participants: list[Participant]) -> dict[Queue, list[Participant]]:
     men = [p for p in participants if p.category != Category.LADY]
     standard = [p for p in men if p.clazz == Class.STANDARD]
@@ -183,6 +211,7 @@ def build_queues(participants: list[Participant]) -> dict[Queue, list[Participan
 
     ensure_ladies_have_guns(standard_1, standard_2)
     ensure_classes_not_fucked_up(standard_1, standard_2)
+    equalize_std(standard_1, standard_2)
 
     queues = {
         Queue.LADY: [p for p in participants if p.category == Category.LADY],
@@ -192,59 +221,42 @@ def build_queues(participants: list[Participant]) -> dict[Queue, list[Participan
         Queue.STANDARD_1: standard_1,
         Queue.STANDARD_2: standard_2,
     }
+
+    queues[Queue.STANDARD_1] = standard
+    queues[Queue.STANDARD_2] = []
     return queues
 
 
-def main():
-    participants = read_participants("participants.csv")
-    queues = build_queues(participants)
-
-    queue_duels = {
-        queue_name: generate_duels(queue_participants, QUEUE_REPEATS[queue_name])
-        for queue_name, queue_participants in queues.items()
-    }
-    range_queues = {}
+def deliver_variant(range_queues, variant_name):
     try:
         os.mkdir("out")
     except FileExistsError:
         pass
-    for variant_name, variant in QUEUE_VARIANTS.items():
-        target_dir = f"out/{variant_name}"
-        try:
-            os.mkdir(target_dir)
-        except FileExistsError:
-            pass
+    target_dir = f"out/{variant_name}"
+    try:
+        os.mkdir(target_dir)
+    except FileExistsError:
+        pass
+    excel_writer = pd.ExcelWriter(f"{target_dir}/pairs_{variant_name}.xlsx")
+    for r, q in range_queues.items():
+        q = reorder_queue(q)
+        q_items = [
+            {
+                "number": idx + 1,
+                "class": render_class(duel.clazz, duel.category),
+                "left_name": duel.left.name,
+                "right_name": duel.right.name,
+            }
+            for idx, duel in enumerate(q)
+        ]
+        df = pd.DataFrame(q_items)
+        df.to_excel(excel_writer, sheet_name=f"Рубіж {r.value}")
 
-        excel_writer = pd.ExcelWriter(f"{target_dir}/pairs.xlsx")
-
-        for r in Range:
-            range_queues[r] = []
-            for q_name in variant[r]:
-                range_queues[r] += queue_duels[q_name]
-
-        for r, q in range_queues.items():
-            q = reoder_queue(q)
-            q_items = [
-                {
-                    "number": idx + 1,
-                    "class": render_class(duel.clazz, duel.category),
-                    "left_name": duel.left.name,
-                    "right_name": duel.right.name,
-                }
-                for idx, duel in enumerate(q)
-            ]
-            df = pd.DataFrame(q_items)
-            fname = f"{target_dir}/range_{r.value}.xlsx"
-            # with open(fname, "w") as f:
-            df.to_excel(excel_writer, sheet_name=f"Рубіж {r.value}")
-
-            with open(f"{target_dir}/range_{r.value}.csv", "w") as f:
-                writer = csv.DictWriter(f, q_items[0].keys())
-                writer.writeheader()
-                writer.writerows(q_items)
-            name = f"{variant_name} - {r}"
-            validity = assert_pairs_valid(participants, name, q)
-        excel_writer.save()
+        with open(f"{target_dir}/range_{r.value}.csv", "w") as f:
+            writer = csv.DictWriter(f, q_items[0].keys())
+            writer.writeheader()
+            writer.writerows(q_items)
+    excel_writer.save()
 
 
 def render_class(clazz: Class, category: Category) -> str:
@@ -256,6 +268,35 @@ def render_class(clazz: Class, category: Category) -> str:
         return "T"
     elif clazz == Class.STANDARD:
         return "S" if category == Category.GENERAL else "SL"
+
+
+def main():
+    participants = read_participants("participants.csv")
+    queues = build_queues(participants)
+
+    queue_duels = {
+        queue_name: generate_duels(queue_participants, QUEUE_REPEATS[queue_name])
+        for queue_name, queue_participants in queues.items()
+    }
+
+    for variant_name, variant in QUEUE_VARIANTS.items():
+
+        range_queues = {}
+        for r in Range:
+            range_queues[r] = []
+            for q_name in variant[r]:
+                range_queues[r] += queue_duels[q_name]
+
+        range_queues = {
+            r: reorder_queue(q)
+            for r, q in range_queues.items()
+        }
+
+        for r, q in range_queues:
+            name = f"{variant_name} - range {r.value}"
+            validity = assert_pairs_valid(participants, name, q)
+
+        deliver_variant(range_queues, variant_name)
 
 
 # Press the green button in the gutter to run the script.
