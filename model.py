@@ -17,7 +17,7 @@ class Class(str, enum.Enum):
 
 
 class Queue(str, enum.Enum):
-    STANDARD_1 = "Стандарт 1"
+    STANDARD = "Стандарт 1"
     STANDARD_2 = "Стандарт 2"
     STANDARD_MANUAL = "Стандарт-мануал"
     MODIFIED = "Модифікований"
