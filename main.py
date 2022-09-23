@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import itertools
 import os
 import random
 
@@ -45,31 +46,77 @@ QUEUE_VARIANTS = {
     # },
     "single_tactics_adapted": {
         model.Range.First: [model.Queue.STANDARD_2, model.Queue.MODIFIED, model.Queue.OPEN, ],
-        model.Range.Second: [model.Queue.STANDARD, model.Queue.STANDARD_MANUAL, model.Queue.LADY, ],
+        model.Range.Second: [model.Queue.STANDARD_1, model.Queue.STANDARD_MANUAL, model.Queue.LADY, ],
     },
-    "huge_standard": {
-        model.Range.First: [model.Queue.STANDARD_2, model.Queue.STANDARD_MANUAL, model.Queue.MODIFIED,
-                            model.Queue.OPEN, ],
-        model.Range.Second: [model.Queue.STANDARD, model.Queue.LADY, ],
-    },
-    "huge_standard_everyone_once": {
-        model.Range.First: [model.Queue.STANDARD_2, model.Queue.STANDARD_MANUAL, model.Queue.MODIFIED,
-                            model.Queue.OPEN, ],
-        model.Range.Second: [model.Queue.STANDARD, model.Queue.LADY, ],
-    },
+    # "huge_standard": {
+    #     model.Range.First: [model.Queue.STANDARD_2, model.Queue.STANDARD_MANUAL, model.Queue.MODIFIED,
+    #                         model.Queue.OPEN, ],
+    #     model.Range.Second: [model.Queue.STANDARD, model.Queue.LADY, ],
+    # },
+    # "huge_standard_everyone_once": {
+    #     model.Range.First: [model.Queue.STANDARD_2, model.Queue.STANDARD_MANUAL, model.Queue.MODIFIED,
+    #                         model.Queue.OPEN, ],
+    #     model.Range.Second: [model.Queue.STANDARD, model.Queue.LADY, ],
+    # },
 }
 
 QUEUE_REPEATS = {
-    model.Queue.STANDARD: False,
+    model.Queue.STANDARD_1: False,
     model.Queue.STANDARD_2: False,
     model.Queue.STANDARD_MANUAL: False,
     model.Queue.MODIFIED: False,
-    model.Queue.OPEN: True,
+    model.Queue.OPEN: False,
     model.Queue.LADY: True,
 }
 
 
+NONCE = Participant("", "", "", 0, None, None)
+
+
 def generate_duels(participants: list[Participant], repeat: bool) -> list[Duel]:
+    participants = participants[:]
+    if len(participants) % 2 != 0:
+        participants.append(NONCE)
+
+    top, bottom = participants[:len(participants)//2], participants[len(participants)//2:]
+
+    result = []
+
+    for idx in range(len(participants) - 1):
+        tb = (top, bottom)
+        d = list(zip(top, bottom))
+        duels = [
+            Duel(t, b)
+            for t, b in zip(top, bottom)
+        ]
+        result = result + duels
+        top, bottom = rotate(top, bottom)
+
+    if repeat:
+        result = result + [
+            d.swapped()
+            for d in result
+        ]
+    else:
+        # for non-repeat tournaments make sure everyone has more or less equal number of duels
+        # where they're to the left and to the right
+        first_participant = participants[0]
+        first_participant_duels = [d for d in result if first_participant in d]
+        remaining_duels, swap_duels = first_participant_duels[::2], first_participant_duels[1::2]
+        for duel in swap_duels:
+            idx = result.index(duel)
+            result[idx] = duel.swapped()
+
+    result = [
+        d for d in result
+        if NONCE not in d and d.is_valid()
+    ]
+
+    for p in participants:
+        count_left = len([d for d in result if d.left == p])
+        count_right = len([d for d in result if d.right == p])
+        print(p.name, count_left, count_right)
+    return result
     result = []
     if repeat:
         result = [
@@ -90,6 +137,14 @@ def generate_duels(participants: list[Participant], repeat: bool) -> list[Duel]:
     # random.Random().shuffle(result)
     return result
 
+
+def rotate(top: list[Participant], bottom: list[Participant]) -> (list[Participant], list[Participant]):
+    current = (top, bottom)
+    result = (
+        [top[0]] + [bottom[0]] + top[1:len(top)-1],
+        bottom[1:] + [top[-1]]
+    )
+    return result
 
 def assert_pairs_valid(participants: list[Participant], variant_name: str, duels: list[Duel]) -> bool:
     MIN_DOWNTIME = 1
@@ -216,10 +271,10 @@ def build_queues(participants: list[Participant]) -> dict[Queue, list[Participan
     men = [p for p in participants if p.category != Category.LADY]
     standard = [p for p in men if p.clazz == Class.STANDARD]
 
-    # half = len(standard) // 2
-    # standard_1, standard_2 = standard[:half], standard[half:]
+    half = len(standard) // 2
+    standard_1, standard_2 = standard[:half], standard[half:]
     #
-    # ensure_ladies_have_guns(standard_1, standard_2)
+    ensure_ladies_have_guns(standard_1, standard_2)
     # ensure_classes_not_fucked_up(standard_1, standard_2)
     # equalize_std(standard_1, standard_2)
 
@@ -228,7 +283,8 @@ def build_queues(participants: list[Participant]) -> dict[Queue, list[Participan
         Queue.MODIFIED: [p for p in men if p.clazz == Class.MODIFIED],
         Queue.OPEN: [p for p in men if p.clazz == Class.OPEN],
         Queue.STANDARD_MANUAL: [p for p in men if p.clazz == Class.STANDARD_MANUAL],
-        Queue.STANDARD: standard,
+        Queue.STANDARD_1: standard_1,
+        Queue.STANDARD_2: standard_2
     }
 
     return queues
@@ -282,35 +338,42 @@ def deliver_participants(participants: list[Participant], excel_writer: pd.Excel
     df.to_excel(excel_writer, sheet_name="Учасники")
 
 
+def merge_queues(queues: list[list[Duel]]) -> list[Duel]:
+
+    return list(itertools.chain(*queues))
+
 def main():
     participants = read_participants("participants.csv")
     queues = build_queues(participants)
 
-    queue_duels = {
-        queue_name: generate_duels(queue_participants, QUEUE_REPEATS[queue_name])
-        for queue_name, queue_participants in queues.items()
-    }
-    queue_duels = {
-        queue_name: reorder_queue(queue)
-        for queue_name, queue in queue_duels.items()
-    }
+    for variant_name, variant in QUEUE_VARIANTS.items():
+        queue_duels = {
+            queue_name: generate_duels(queue_participants, QUEUE_REPEATS[queue_name])
+            for queue_name, queue_participants in queues.items()
+        }
 
-    variant_name = "basic"
-    try:
-        os.mkdir("out")
-    except FileExistsError:
-        pass
-    target_dir = f"out/{variant_name}"
-    try:
-        os.mkdir(target_dir)
-    except FileExistsError:
-        pass
-    excel_writer = pd.ExcelWriter(f"{target_dir}/pairs_{variant_name}.xlsx")
+        range_duels = {
+            range: merge_queues(
+                [queue_duels[queue_name] for queue_name in queue_names]
+            )
+            for range, queue_names in variant.items()
+        }
 
-    deliver_participants(participants, excel_writer)
-    deliver_variant(queue_duels, excel_writer)
+        try:
+            os.mkdir("out")
+        except FileExistsError:
+            pass
+        target_dir = f"out/{variant_name}"
+        try:
+            os.mkdir(target_dir)
+        except FileExistsError:
+            pass
+        excel_writer = pd.ExcelWriter(f"{target_dir}/pairs_{variant_name}.xlsx")
 
-    excel_writer.save()
+        deliver_participants(participants, excel_writer)
+        deliver_variant(range_duels, excel_writer)
+
+        excel_writer.save()
 
 
 # Press the green button in the gutter to run the script.

@@ -17,7 +17,7 @@ class Class(str, enum.Enum):
 
 
 class Queue(str, enum.Enum):
-    STANDARD = "Стандарт 1"
+    STANDARD_1 = "Стандарт 1"
     STANDARD_2 = "Стандарт 2"
     STANDARD_MANUAL = "Стандарт-мануал"
     MODIFIED = "Модифікований"
@@ -53,6 +53,12 @@ class Participant:
 class Duel:
     left: Participant
     right: Participant
+
+    def swapped(self) -> Duel:
+        return Duel(self.right, self.left)
+
+    def is_valid(self) -> bool:
+        return (self.left.clazz, self.left.category) == (self.right.clazz, self.right.category)
 
     @property
     def clazz(self) -> Class:

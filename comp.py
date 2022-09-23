@@ -66,6 +66,7 @@ def mean(*args) -> float:
 
 
 def reorder_queue(queue: list[model.Duel]) -> list[model.Duel]:
+    return queue
     schedule = queue[:1]
     queue = queue[1:]
 
@@ -116,7 +117,7 @@ def order_queue(schedule: list[model.Duel], queue: list[model.Duel]) -> list[Due
 
 
 def pick_preferred_duel(schedule: list[model.Duel], ranked_duels: list[DuelOrderRank]) -> model.Duel:
-    ranked_duels.sort(key=lambda r: (-r.max_delay, -r.min_delay, r.min_pct_complete))
+    ranked_duels.sort(key=lambda r: (-r.max_delay, ))
     # ranked_duels.sort(key=lambda r: (-r.max_delay, -total_ratios[r.duel.clazz]))
 
     # upcoming_duels = [d.duel for d in ranked_duels]
