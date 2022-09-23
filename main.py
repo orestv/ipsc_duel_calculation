@@ -315,15 +315,17 @@ def build_queues(participants: list[Participant]) -> dict[Queue, list[Participan
 
 def deliver_variant(range_queues, excel_writer: pd.ExcelWriter):
     for r, q in range_queues.items():
-        delays = get_participant_delays(q)
+        # delays = get_participant_delays(q)
         q_items = [
             {
                 "number": idx + 1,
-                "class": render_class(duel.clazz, duel.category),
+                "class": render_class(duel.left),
                 "left_name": duel.left.name,
+                "_": " " * 16,
                 "right_name": duel.right.name,
-                "left_delay": delays[idx][0][0],
-                "right_delay": delays[idx][0][1]
+                "__": " " * 16,
+                # "left_delay": delays[idx][0][0],
+                # "right_delay": delays[idx][0][1]
             }
             for idx, duel in enumerate(q)
         ]
@@ -331,7 +333,7 @@ def deliver_variant(range_queues, excel_writer: pd.ExcelWriter):
 
         sheet_name = f"Пари Рубіж {r.value} Сортовані"
         header_text = sheet_name
-        add_sheet_header(excel_writer, header_text, sheet_name, 4)
+        add_sheet_header(excel_writer, header_text, sheet_name, 6)
         df.to_excel(
             excel_writer,
             sheet_name=sheet_name,
@@ -341,15 +343,15 @@ def deliver_variant(range_queues, excel_writer: pd.ExcelWriter):
         )
 
 
-def render_class(clazz: Class, category: Category) -> str:
-    if clazz == Class.STANDARD_MANUAL:
+def render_class(p: Participant) -> str:
+    if p.clazz == Class.STANDARD_MANUAL:
         return "SM"
-    elif clazz == Class.OPEN:
+    elif p.clazz == Class.OPEN:
         return "O"
-    elif clazz == Class.MODIFIED:
+    elif p.clazz == Class.MODIFIED:
         return "T"
-    elif clazz == Class.STANDARD:
-        return "S" if category == Category.GENERAL else "SL"
+    elif p.clazz == Class.STANDARD:
+        return "S" if p.category == Category.GENERAL else "SL"
 
 
 def render_class_ua(p: Participant) -> str:
@@ -368,7 +370,7 @@ def deliver_participants(participants: list[Participant], excel_writer: pd.Excel
         [
             {
                 "name": p.name,
-                "class": render_class(p.clazz, p.category),
+                "class": render_class(p),
             }
             for p in participants
         ]
@@ -383,7 +385,7 @@ def deliver_participants(participants: list[Participant], excel_writer: pd.Excel
         }
     )
     # cnt = df.groupby(["class", ]).count()
-    header_text = "Учасники"
+    header_text = "Загальний список"
     sheet_name = header_text
     add_sheet_header(excel_writer, header_text, sheet_name, 3)
 
@@ -401,13 +403,13 @@ def deliver_range_lists(range: Range, participants: typing.Iterable[Participant]
         [
             {
                 "name": p.name,
-                "class": render_class_ua(p)
+                "class": render_class_ua(p),
             }
             for p in participants
         ]
     ).sort_values(["class", "name"]).reset_index(drop=True)
-    df["No."] = df.index + 1
-    df = df[["No.", "class", "name"]]
+    df.index = df.index + 1
+    # df = df[["No.", "class", "name"]]
 
     sheet_name = f"Список Рубіж №{range.value}"
     header_text = f"Рубіж №{range.value}"
@@ -416,7 +418,31 @@ def deliver_range_lists(range: Range, participants: typing.Iterable[Participant]
     df.to_excel(
         excel_writer,
         sheet_name=sheet_name,
-        index=False,
+        header=False,
+        startrow=1,
+    )
+
+def deliver_range_pairs(range: Range, duels: typing.Iterable[Duel], excel_writer: pd.ExcelWriter):
+    df = pd.DataFrame(
+        [
+            {
+                "class": render_class(duel.left),
+                "left": duel.left.name,
+                "_": " " * 16,
+                "right": duel.right.name,
+                "__": " " * 16,
+            }
+            for duel in duels
+        ]
+    ).sort_values(["class", "left", "right",]).reset_index(drop=True)
+    df.index = df.index + 1
+
+    sheet_name = f"Пари Рубіж №{range.value}"
+    header_text = sheet_name
+    add_sheet_header(excel_writer, header_text, sheet_name, 6)
+    df.to_excel(
+        excel_writer,
+        sheet_name=sheet_name,
         header=False,
         startrow=1,
     )
@@ -434,6 +460,7 @@ def deliver_standard_groups(standard_1: list[Participant], standard_2: list[Part
     ]
     df = pd.concat(dataframes)
     df = df.reset_index()
+    df.index = df.index + 1
     df = df.set_index(["group", "index",])
 
     sheet_name = "Рубіж №2 Групи Стандарт"
@@ -447,6 +474,18 @@ def deliver_standard_groups(standard_1: list[Participant], standard_2: list[Part
         startrow=2
     )
 
+
+def equalize_column_width(excel_writer):
+    workbook = excel_writer.book
+    for ws in workbook.worksheets:
+        worksheet: openpyxl.worksheet.worksheet.Worksheet = ws
+        dims = {}
+        for row in worksheet.rows:
+            for cell in row:
+                if cell.value:
+                    dims[cell.column_letter] = max((dims.get(cell.column_letter, 0), len(str(cell.value))))
+        for col, value in dims.items():
+            worksheet.column_dimensions[col].width = value + 2
 
 def add_sheet_header(excel_writer, header_text, sheet_name, width: int):
     workbook: openpyxl.Workbook = excel_writer.book
@@ -501,13 +540,18 @@ def main():
         excel_writer = pd.ExcelWriter(f"{target_dir}/pairs_{variant_name}.xlsx")
 
         deliver_participants(participants, excel_writer)
-        deliver_standard_groups(queues[Queue.STANDARD_1], queues[Queue.STANDARD_2], excel_writer)
 
         for range, duels in range_duels.items():
             range_participants = set(itertools.chain(*duels))
             deliver_range_lists(range, range_participants, excel_writer)
 
+        deliver_standard_groups(queues[Queue.STANDARD_1], queues[Queue.STANDARD_2], excel_writer)
+
+        for range, duels in range_duels.items():
+            deliver_range_pairs(range, duels, excel_writer)
+
         deliver_variant(range_duels, excel_writer)
+        equalize_column_width(excel_writer)
 
         excel_writer.save()
 
