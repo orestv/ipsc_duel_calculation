@@ -46,8 +46,8 @@ QUEUE_VARIANTS = {
     #     model.Range.Second: [model.Queue.STANDARD_1, model.Queue.LADY, model.Queue.MODIFIED, ],
     # },
     "single_tactics_adapted": {
-        model.Range.First: [model.Queue.STANDARD_2, model.Queue.MODIFIED, model.Queue.OPEN, ],
-        model.Range.Second: [model.Queue.STANDARD_1, model.Queue.STANDARD_MANUAL, model.Queue.LADY, ],
+        model.Range.First: [model.Queue.STANDARD_2, model.Queue.MODIFIED,model.Queue.STANDARD_MANUAL,  ],
+        model.Range.Second: [model.Queue.STANDARD_1,  model.Queue.OPEN, model.Queue.LADY, ],
     },
     # "huge_standard": {
     #     model.Range.First: [model.Queue.STANDARD_2, model.Queue.STANDARD_MANUAL, model.Queue.MODIFIED,
@@ -110,32 +110,47 @@ def generate_duels(participants: list[Participant], repeat: bool) -> list[Duel]:
 
     result = [
         d for d in result
-        if NONCE not in d and d.is_valid()
+        if NONCE not in d
     ]
+
+    result = fix_disbalanced_pairs(result)
+    return result
+
+
+def fix_disbalanced_pairs(duels: list[Duel]) -> list[Duel]:
+    participants = {d.left for d in duels} | {d.right for d in duels}
+    participants_leftright = []
+    for p in participants:
+        count_left = len([d for d in duels if d.left == p])
+        count_right = len([d for d in duels if d.right == p])
+        participants_leftright.append((count_left, count_right, p))
+        print(p.name, count_left, count_right)
+
+    disbalanced_participants = [
+        (count_left, count_right, p)
+        for count_left, count_right, p in participants_leftright
+        if abs(count_left - count_right) > 1
+    ]
+    if not disbalanced_participants:
+        return duels
+    result = duels[:]
+    disbalanced_participants.sort()
+    half_length = len(disbalanced_participants)//2
+    db_left, db_right = disbalanced_participants[:half_length], disbalanced_participants[half_length:]
+    for left, right in zip(db_left, db_right):
+        pleft = left[2]
+        pright = right[2]
+
+        old_duel = Duel(pright, pleft)
+        new_duel = Duel(pleft, pright)
+        idx = result.index(old_duel)
+        result[idx] = new_duel
 
     for p in participants:
         count_left = len([d for d in result if d.left == p])
         count_right = len([d for d in result if d.right == p])
+        participants_leftright.append((count_left, count_right, p))
         print(p.name, count_left, count_right)
-    return result
-    result = []
-    if repeat:
-        result = [
-            Duel(p1, p2)
-            for p1 in participants
-            for p2 in participants
-            if p1 != p2
-        ]
-    else:
-        pairwise = 0
-        for idx, left in enumerate(participants):
-            for right in participants[idx + 1:]:
-                duel = Duel(left, right)
-                if pairwise % 2 == 0:
-                    duel = Duel(right, left)
-                pairwise += 1
-                result.append(duel)
-    # random.Random().shuffle(result)
     return result
 
 
@@ -189,7 +204,6 @@ def get_participant_delays(duels):
             continue
         delay_left = None
         delay_right = None
-        delay = None
         for delay, prev_duel in enumerate(reversed(duels[:idx])):
             if delay_left is None and duel.left in prev_duel:
                 delay_left = delay
@@ -238,7 +252,7 @@ def ensure_ladies_have_guns(std_1: list[Participant], std_2: list[Participant]):
 
 
 def ensure_classes_not_fucked_up(std_1: list[Participant], std_2: list[Participant]):
-    swapper_names_1 = ["Волощук", "Корсун"]
+    swapper_names_1 = ["Дубик", ]
     swapper_names_2 = ["Ситарський", "Кольченко", ]
 
     swappers_1 = [
@@ -276,7 +290,7 @@ def build_queues(participants: list[Participant]) -> dict[Queue, list[Participan
     standard_1, standard_2 = standard[:half], standard[half:]
     #
     ensure_ladies_have_guns(standard_1, standard_2)
-    # ensure_classes_not_fucked_up(standard_1, standard_2)
+    ensure_classes_not_fucked_up(standard_1, standard_2)
     # equalize_std(standard_1, standard_2)
 
     queues = {
@@ -307,7 +321,7 @@ def deliver_variant(range_queues, excel_writer: pd.ExcelWriter):
         ]
         df = pd.DataFrame(q_items)
 
-        df.to_excel(excel_writer, sheet_name=f"Клас {r.value}")
+        df.to_excel(excel_writer, sheet_name=f"Рубіж {r.value}")
 
 
 def render_class(clazz: Class, category: Category) -> str:
