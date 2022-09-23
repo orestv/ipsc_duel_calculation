@@ -313,16 +313,18 @@ def build_queues(participants: list[Participant]) -> dict[Queue, list[Participan
     return queues
 
 
-def deliver_variant(range_queues, excel_writer: pd.ExcelWriter):
+def deliver_sorted_pairs(range_queues, excel_writer: pd.ExcelWriter):
     for r, q in range_queues.items():
         # delays = get_participant_delays(q)
         q_items = [
             {
                 "number": idx + 1,
                 "class": render_class(duel.left),
-                "left_name": duel.left.name,
+                "left": duel.left.name,
+                "delay_left": None,
                 "_": " " * 16,
-                "right_name": duel.right.name,
+                "right": duel.right.name,
+                "delay_right": None,
                 "__": " " * 16,
                 # "left_delay": delays[idx][0][0],
                 # "right_delay": delays[idx][0][1]
@@ -330,6 +332,19 @@ def deliver_variant(range_queues, excel_writer: pd.ExcelWriter):
             for idx, duel in enumerate(q)
         ]
         df = pd.DataFrame(q_items)
+
+        df_delays = df[["left", "right"]]
+        df_delays["n"] = df_delays.index + 1
+
+        participants = list(pd.concat([df_delays.left, df_delays.right]).unique())
+        for p in participants:
+            d = df_delays[(df_delays.left == p) | (df_delays.right == p)]
+            d = d.join(d.shift(-1), rsuffix='_next')
+            d["delay"] = (d.n_next - d.n).astype(int, errors="ignore")
+            df["delay_left"].update(d[(d.left == p)].delay)
+            df["delay_right"].update(d[(d.right == p)].delay)
+
+        df[["delay_left", "delay_right"]].fillna("F", inplace=True)
 
         sheet_name = f"Пари Рубіж {r.value} Сортовані"
         header_text = sheet_name
@@ -550,7 +565,7 @@ def main():
         for range, duels in range_duels.items():
             deliver_range_pairs(range, duels, excel_writer)
 
-        deliver_variant(range_duels, excel_writer)
+        deliver_sorted_pairs(range_duels, excel_writer)
         equalize_column_width(excel_writer)
 
         excel_writer.save()
