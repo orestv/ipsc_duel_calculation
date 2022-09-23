@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import itertools
+import operator
 import os
 import random
 
@@ -339,8 +340,16 @@ def deliver_participants(participants: list[Participant], excel_writer: pd.Excel
 
 
 def merge_queues(queues: list[list[Duel]]) -> list[Duel]:
+    percentages = [
+        [
+            (duel, idx / len(q))
+            for idx, duel in enumerate(q)
+        ]
+        for q in queues
+    ]
+    sorted_duels = sorted(itertools.chain.from_iterable(percentages), key=operator.itemgetter(1))
+    return [duel for duel, percentage in sorted_duels]
 
-    return list(itertools.chain(*queues))
 
 def main():
     participants = read_participants("participants.csv")
