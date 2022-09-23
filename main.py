@@ -351,6 +351,7 @@ def render_class(clazz: Class, category: Category) -> str:
     elif clazz == Class.STANDARD:
         return "S" if category == Category.GENERAL else "SL"
 
+
 def render_class_ua(p: Participant) -> str:
     if p.clazz == Class.STANDARD_MANUAL:
         return "Стандарт-Мануал"
@@ -417,6 +418,32 @@ def deliver_range_lists(range: Range, participants: typing.Iterable[Participant]
     )
 
 
+def deliver_standard_groups(standard_1: list[Participant], standard_2: list[Participant], excel_writer):
+    dataframes = [
+        pd.DataFrame(
+            {
+                "group": f"Група №{idx+1}",
+                "name": [p.name for p in queue]
+            }
+        )
+        for idx, queue in enumerate([standard_1, standard_2])
+    ]
+    df = pd.concat(dataframes)
+    df = df.reset_index()
+    df = df.set_index(["group", "index",])
+
+    sheet_name = "Рубіж №2 Групи Стандарт"
+    header_text = sheet_name
+    add_sheet_header(excel_writer, header_text, sheet_name, 3)
+
+    df.to_excel(
+        excel_writer,
+        sheet_name=sheet_name,
+        merge_cells=True,
+        startrow=2
+    )
+
+
 def add_sheet_header(excel_writer, header_text, sheet_name, width: int):
     workbook: openpyxl.Workbook = excel_writer.book
     worksheet: openpyxl.worksheet.worksheet.Worksheet = workbook.create_sheet(sheet_name)
@@ -469,8 +496,8 @@ def main():
             pass
         excel_writer = pd.ExcelWriter(f"{target_dir}/pairs_{variant_name}.xlsx")
 
-
         deliver_participants(participants, excel_writer)
+        deliver_standard_groups(queues[Queue.STANDARD_1], queues[Queue.STANDARD_2], excel_writer)
 
         for range, duels in range_duels.items():
             range_participants = set(itertools.chain(*duels))
