@@ -45,9 +45,13 @@ QUEUE_VARIANTS = {
     #     model.Range.First: [model.Queue.STANDARD_2, model.Queue.OPEN, model.Queue.STANDARD_MANUAL, ],
     #     model.Range.Second: [model.Queue.STANDARD_1, model.Queue.LADY, model.Queue.MODIFIED, ],
     # },
-    "single_tactics_adapted": {
-        model.Range.First: [model.Queue.STANDARD_2, model.Queue.MODIFIED,model.Queue.STANDARD_MANUAL,  ],
-        model.Range.Second: [model.Queue.STANDARD_1,  model.Queue.OPEN, model.Queue.LADY, ],
+    # "single_tactics_adapted": {
+    #     model.Range.First: [model.Queue.STANDARD_2, model.Queue.MODIFIED, model.Queue.STANDARD_MANUAL, ],
+    #     model.Range.Second: [model.Queue.STANDARD_1, model.Queue.OPEN, model.Queue.LADY, ],
+    # },
+    "final": {
+        model.Range.First: [model.Queue.STANDARD_1, model.Queue.MODIFIED, model.Queue.OPEN, ],
+        model.Range.Second: [model.Queue.STANDARD_2, model.Queue.STANDARD_MANUAL, model.Queue.LADY, ],
     },
     # "huge_standard": {
     #     model.Range.First: [model.Queue.STANDARD_2, model.Queue.STANDARD_MANUAL, model.Queue.MODIFIED,
@@ -70,7 +74,6 @@ QUEUE_REPEATS = {
     model.Queue.LADY: True,
 }
 
-
 NONCE = Participant("", "", "", 0, None, None)
 
 
@@ -79,7 +82,7 @@ def generate_duels(participants: list[Participant], repeat: bool) -> list[Duel]:
     if len(participants) % 2 != 0:
         participants.append(NONCE)
 
-    top, bottom = participants[:len(participants)//2], participants[len(participants)//2:]
+    top, bottom = participants[:len(participants) // 2], participants[len(participants) // 2:]
 
     result = []
 
@@ -135,7 +138,7 @@ def fix_disbalanced_pairs(duels: list[Duel]) -> list[Duel]:
         return duels
     result = duels[:]
     disbalanced_participants.sort()
-    half_length = len(disbalanced_participants)//2
+    half_length = len(disbalanced_participants) // 2
     db_left, db_right = disbalanced_participants[:half_length], disbalanced_participants[half_length:]
     for left, right in zip(db_left, db_right):
         pleft = left[2]
@@ -157,10 +160,11 @@ def fix_disbalanced_pairs(duels: list[Duel]) -> list[Duel]:
 def rotate(top: list[Participant], bottom: list[Participant]) -> (list[Participant], list[Participant]):
     current = (top, bottom)
     result = (
-        [top[0]] + [bottom[0]] + top[1:len(top)-1],
+        [top[0]] + [bottom[0]] + top[1:len(top) - 1],
         bottom[1:] + [top[-1]]
     )
     return result
+
 
 def assert_pairs_valid(participants: list[Participant], variant_name: str, duels: list[Duel]) -> bool:
     MIN_DOWNTIME = 1
@@ -289,8 +293,8 @@ def build_queues(participants: list[Participant]) -> dict[Queue, list[Participan
     half = len(standard) // 2
     standard_1, standard_2 = standard[:half], standard[half:]
     #
-    ensure_ladies_have_guns(standard_1, standard_2)
-    ensure_classes_not_fucked_up(standard_1, standard_2)
+    # ensure_ladies_have_guns(standard_1, standard_2)
+    # ensure_classes_not_fucked_up(standard_1, standard_2)
     # equalize_std(standard_1, standard_2)
 
     queues = {
@@ -321,7 +325,11 @@ def deliver_variant(range_queues, excel_writer: pd.ExcelWriter):
         ]
         df = pd.DataFrame(q_items)
 
-        df.to_excel(excel_writer, sheet_name=f"Рубіж {r.value}")
+        df.to_excel(
+            excel_writer,
+            sheet_name=f"Рубіж {r.value}",
+            index=False,
+        )
 
 
 def render_class(clazz: Class, category: Category) -> str:
@@ -344,13 +352,24 @@ def deliver_participants(participants: list[Participant], excel_writer: pd.Excel
             }
             for p in participants
         ]
-    ).sort_values(["class", "name",]).set_index("class", drop=True)
+    ).sort_values(["class", "name", ]).set_index("class", drop=True)
 
     df["counts"] = df.groupby(["class", ]).count()
     df = df.reset_index().set_index(["class", "counts"])
+    df = df.rename(
+        columns={
+            "name": "Імʼя",
+            "class": "Клас",
+        }
+    )
     # cnt = df.groupby(["class", ]).count()
 
-    df.to_excel(excel_writer, sheet_name="Учасники")
+    df.to_excel(
+        excel_writer,
+        sheet_name="Учасники",
+        # index=False,
+        merge_cells=True,
+    )
 
 
 def merge_queues(queues: list[list[Duel]]) -> list[Duel]:
