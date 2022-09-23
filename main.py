@@ -383,12 +383,16 @@ def deliver_participants(participants: list[Participant], excel_writer: pd.Excel
         }
     )
     # cnt = df.groupby(["class", ]).count()
+    header_text = "Учасники"
+    sheet_name = header_text
+    add_sheet_header(excel_writer, header_text, sheet_name, 3)
 
     df.to_excel(
         excel_writer,
-        sheet_name="Учасники",
+        sheet_name=sheet_name,
         # index=False,
         merge_cells=True,
+        startrow=2
     )
 
 
