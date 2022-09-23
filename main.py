@@ -5,7 +5,11 @@ import itertools
 import operator
 import os
 import random
+import typing
 
+import openpyxl
+import openpyxl.styles
+import openpyxl.worksheet.worksheet
 import pandas as pd
 
 pd.options.plotting.backend = "plotly"
@@ -325,10 +329,15 @@ def deliver_variant(range_queues, excel_writer: pd.ExcelWriter):
         ]
         df = pd.DataFrame(q_items)
 
+        sheet_name = f"Пари Рубіж {r.value} Сортовані"
+        header_text = sheet_name
+        add_sheet_header(excel_writer, header_text, sheet_name, 4)
         df.to_excel(
             excel_writer,
-            sheet_name=f"Рубіж {r.value}",
+            sheet_name=sheet_name,
             index=False,
+            header=False,
+            startrow=1,
         )
 
 
@@ -341,6 +350,16 @@ def render_class(clazz: Class, category: Category) -> str:
         return "T"
     elif clazz == Class.STANDARD:
         return "S" if category == Category.GENERAL else "SL"
+
+def render_class_ua(p: Participant) -> str:
+    if p.clazz == Class.STANDARD_MANUAL:
+        return "Стандарт-Мануал"
+    elif p.clazz == Class.OPEN:
+        return "Відкритий"
+    elif p.clazz == Class.MODIFIED:
+        return "Тактика"
+    elif p.clazz == Class.STANDARD:
+        return "Стандарт" if p.category == Category.GENERAL else "Стандарт Леді"
 
 
 def deliver_participants(participants: list[Participant], excel_writer: pd.ExcelWriter):
@@ -370,6 +389,44 @@ def deliver_participants(participants: list[Participant], excel_writer: pd.Excel
         # index=False,
         merge_cells=True,
     )
+
+
+def deliver_range_lists(range: Range, participants: typing.Iterable[Participant], excel_writer: pd.ExcelWriter):
+    df = pd.DataFrame(
+        [
+            {
+                "name": p.name,
+                "class": render_class_ua(p)
+            }
+            for p in participants
+        ]
+    ).sort_values(["class", "name"]).reset_index(drop=True)
+    df["No."] = df.index + 1
+    df = df[["No.", "class", "name"]]
+
+    sheet_name = f"Список Рубіж №{range.value}"
+    header_text = f"Рубіж №{range.value}"
+    add_sheet_header(excel_writer, header_text, sheet_name, 3)
+
+    df.to_excel(
+        excel_writer,
+        sheet_name=sheet_name,
+        index=False,
+        header=False,
+        startrow=1,
+    )
+
+
+def add_sheet_header(excel_writer, header_text, sheet_name, width: int):
+    workbook: openpyxl.Workbook = excel_writer.book
+    worksheet: openpyxl.worksheet.worksheet.Worksheet = workbook.create_sheet(sheet_name)
+    excel_writer.sheets[sheet_name] = worksheet
+    header_font = openpyxl.styles.Font(sz=14, bold=True)
+    header_cell = worksheet["A1"]
+    worksheet["A1"] = header_text
+    worksheet.merge_cells(start_row=1, end_row=1, start_column=1, end_column=width)
+    header_cell.font = header_font
+    header_cell.alignment = openpyxl.styles.Alignment(horizontal="center")
 
 
 def merge_queues(queues: list[list[Duel]]) -> list[Duel]:
@@ -412,7 +469,13 @@ def main():
             pass
         excel_writer = pd.ExcelWriter(f"{target_dir}/pairs_{variant_name}.xlsx")
 
+
         deliver_participants(participants, excel_writer)
+
+        for range, duels in range_duels.items():
+            range_participants = set(itertools.chain(*duels))
+            deliver_range_lists(range, range_participants, excel_writer)
+
         deliver_variant(range_duels, excel_writer)
 
         excel_writer.save()
