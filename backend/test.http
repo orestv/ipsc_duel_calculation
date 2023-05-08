@@ -1,0 +1,29 @@
+POST http://localhost:5000/duels
+Content-Type: application/json
+
+{
+  "ranges": {
+    "1": {
+      "classes": {
+        "S": {
+          "participants": [
+            "Orest Voloshchuk",
+            "Oleksandr Rogozin",
+            "Denys Yuzvyk",
+            "Oleksandr Remez",
+            "Roman Vynar"
+          ],
+          "twice": false
+        },
+        "SM": {
+          "participants": [
+            "Yevgen Moroz",
+            "Anton Laskavyy",
+            "Viktor Kozachenko"
+          ],
+          "twice": true
+        }
+      }
+    }
+  }
+}

@@ -4,7 +4,6 @@ import csv
 import itertools
 import operator
 import os
-import random
 import typing
 
 import openpyxl
@@ -16,7 +15,6 @@ pd.options.plotting.backend = "plotly"
 # import matplotlib.pyplot as plt
 
 import model
-from comp import reorder_queue
 from model import Category, Class, Range, Participant, Duel, Queue
 
 # RANGE_QUEUES = {
@@ -54,8 +52,16 @@ QUEUE_VARIANTS = {
     #     model.Range.Second: [model.Queue.STANDARD_1, model.Queue.OPEN, model.Queue.LADY, ],
     # },
     "final": {
-        model.Range.First: [model.Queue.STANDARD_1, model.Queue.MODIFIED, model.Queue.OPEN, ],
-        model.Range.Second: [model.Queue.STANDARD_2, model.Queue.STANDARD_MANUAL, model.Queue.LADY, ],
+        model.Range.First: [
+            model.Queue.STANDARD_1,
+            model.Queue.MODIFIED,
+            model.Queue.OPEN,
+        ],
+        model.Range.Second: [
+            model.Queue.STANDARD_2,
+            model.Queue.STANDARD_MANUAL,
+            model.Queue.LADY,
+        ],
     },
     # "huge_standard": {
     #     model.Range.First: [model.Queue.STANDARD_2, model.Queue.STANDARD_MANUAL, model.Queue.MODIFIED,
@@ -86,39 +92,36 @@ def generate_duels(participants: list[Participant], repeat: bool) -> list[Duel]:
     if len(participants) % 2 != 0:
         participants.append(NONCE)
 
-    top, bottom = participants[:len(participants) // 2], participants[len(participants) // 2:]
+    top, bottom = (
+        participants[: len(participants) // 2],
+        participants[len(participants) // 2 :],
+    )
 
     result = []
 
     for idx in range(len(participants) - 1):
         tb = (top, bottom)
         d = list(zip(top, bottom))
-        duels = [
-            Duel(t, b)
-            for t, b in zip(top, bottom)
-        ]
+        duels = [Duel(t, b) for t, b in zip(top, bottom)]
         result = result + duels
         top, bottom = rotate(top, bottom)
 
     if repeat:
-        result = result + [
-            d.swapped()
-            for d in result
-        ]
+        result = result + [d.swapped() for d in result]
     else:
         # for non-repeat tournaments make sure everyone has more or less equal number of duels
         # where they're to the left and to the right
         first_participant = participants[0]
         first_participant_duels = [d for d in result if first_participant in d]
-        remaining_duels, swap_duels = first_participant_duels[::2], first_participant_duels[1::2]
+        remaining_duels, swap_duels = (
+            first_participant_duels[::2],
+            first_participant_duels[1::2],
+        )
         for duel in swap_duels:
             idx = result.index(duel)
             result[idx] = duel.swapped()
 
-    result = [
-        d for d in result
-        if NONCE not in d
-    ]
+    result = [d for d in result if NONCE not in d]
 
     result = fix_disbalanced_pairs(result)
     return result
@@ -143,7 +146,10 @@ def fix_disbalanced_pairs(duels: list[Duel]) -> list[Duel]:
     result = duels[:]
     disbalanced_participants.sort()
     half_length = len(disbalanced_participants) // 2
-    db_left, db_right = disbalanced_participants[:half_length], disbalanced_participants[half_length:]
+    db_left, db_right = (
+        disbalanced_participants[:half_length],
+        disbalanced_participants[half_length:],
+    )
     for left, right in zip(db_left, db_right):
         pleft = left[2]
         pright = right[2]
@@ -161,16 +167,17 @@ def fix_disbalanced_pairs(duels: list[Duel]) -> list[Duel]:
     return result
 
 
-def rotate(top: list[Participant], bottom: list[Participant]) -> (list[Participant], list[Participant]):
+def rotate(
+    top: list[Participant], bottom: list[Participant]
+) -> (list[Participant], list[Participant]):
     current = (top, bottom)
-    result = (
-        [top[0]] + [bottom[0]] + top[1:len(top) - 1],
-        bottom[1:] + [top[-1]]
-    )
+    result = ([top[0]] + [bottom[0]] + top[1 : len(top) - 1], bottom[1:] + [top[-1]])
     return result
 
 
-def assert_pairs_valid(participants: list[Participant], variant_name: str, duels: list[Duel]) -> bool:
+def assert_pairs_valid(
+    participants: list[Participant], variant_name: str, duels: list[Duel]
+) -> bool:
     MIN_DOWNTIME = 1
     MAX_DOWNTIME = 4
 
@@ -184,14 +191,13 @@ def assert_pairs_valid(participants: list[Participant], variant_name: str, duels
             }
             for delay, duel in duel_delays
         ],
-
         # {
         #     "delay_left": [delay[0] for delay, duel in duel_delays],
         #     "delay_right": [delay[1] for delay, duel in duel_delays],
         # }
     )
     print(variant_name)
-    print(df.describe(include='all'))
+    print(df.describe(include="all"))
     print("======")
     fig = df.plot(
         title=variant_name,
@@ -260,21 +266,16 @@ def ensure_ladies_have_guns(std_1: list[Participant], std_2: list[Participant]):
 
 
 def ensure_classes_not_fucked_up(std_1: list[Participant], std_2: list[Participant]):
-    swapper_names_1 = ["Дубик", ]
-    swapper_names_2 = ["Ситарський", "Кольченко", ]
+    swapper_names_1 = [
+        "Дубик",
+    ]
+    swapper_names_2 = [
+        "Ситарський",
+        "Кольченко",
+    ]
 
-    swappers_1 = [
-        p
-        for p in std_1
-        for name in swapper_names_1
-        if name in p.name
-    ]
-    swappers_2 = [
-        p
-        for p in std_2
-        for name in swapper_names_2
-        if name in p.name
-    ]
+    swappers_1 = [p for p in std_1 for name in swapper_names_1 if name in p.name]
+    swappers_2 = [p for p in std_2 for name in swapper_names_2 if name in p.name]
     for left, right in zip(swappers_1, swappers_2):
         std_1.remove(left)
         std_2.append(left)
@@ -307,7 +308,7 @@ def build_queues(participants: list[Participant]) -> dict[Queue, list[Participan
         Queue.OPEN: [p for p in men if p.clazz == Class.OPEN],
         Queue.STANDARD_MANUAL: [p for p in men if p.clazz == Class.STANDARD_MANUAL],
         Queue.STANDARD_1: standard_1,
-        Queue.STANDARD_2: standard_2
+        Queue.STANDARD_2: standard_2,
     }
 
     return queues
@@ -339,7 +340,7 @@ def deliver_sorted_pairs(range_queues, excel_writer: pd.ExcelWriter):
         participants = list(pd.concat([df_delays.left, df_delays.right]).unique())
         for p in participants:
             d = df_delays[(df_delays.left == p) | (df_delays.right == p)]
-            d = d.join(d.shift(-1), rsuffix='_next')
+            d = d.join(d.shift(-1), rsuffix="_next")
             d["delay"] = (d.n_next - d.n).astype(int, errors="ignore")
             df["delay_left"].update(d[(d.left == p)].delay)
             df["delay_right"].update(d[(d.right == p)].delay)
@@ -381,17 +382,30 @@ def render_class_ua(p: Participant) -> str:
 
 
 def deliver_participants(participants: list[Participant], excel_writer: pd.ExcelWriter):
-    df = pd.DataFrame(
-        [
-            {
-                "name": p.name,
-                "class": render_class(p),
-            }
-            for p in participants
-        ]
-    ).sort_values(["class", "name", ]).set_index("class", drop=True)
+    df = (
+        pd.DataFrame(
+            [
+                {
+                    "name": p.name,
+                    "class": render_class(p),
+                }
+                for p in participants
+            ]
+        )
+        .sort_values(
+            [
+                "class",
+                "name",
+            ]
+        )
+        .set_index("class", drop=True)
+    )
 
-    df["counts"] = df.groupby(["class", ]).count()
+    df["counts"] = df.groupby(
+        [
+            "class",
+        ]
+    ).count()
     df = df.reset_index().set_index(["class", "counts"])
     df = df.rename(
         columns={
@@ -409,20 +423,28 @@ def deliver_participants(participants: list[Participant], excel_writer: pd.Excel
         sheet_name=sheet_name,
         # index=False,
         merge_cells=True,
-        startrow=2
+        startrow=2,
     )
 
 
-def deliver_range_lists(range: Range, participants: typing.Iterable[Participant], excel_writer: pd.ExcelWriter):
-    df = pd.DataFrame(
-        [
-            {
-                "name": p.name,
-                "class": render_class_ua(p),
-            }
-            for p in participants
-        ]
-    ).sort_values(["class", "name"]).reset_index(drop=True)
+def deliver_range_lists(
+    range: Range,
+    participants: typing.Iterable[Participant],
+    excel_writer: pd.ExcelWriter,
+):
+    df = (
+        pd.DataFrame(
+            [
+                {
+                    "name": p.name,
+                    "class": render_class_ua(p),
+                }
+                for p in participants
+            ]
+        )
+        .sort_values(["class", "name"])
+        .reset_index(drop=True)
+    )
     df.index = df.index + 1
     # df = df[["No.", "class", "name"]]
 
@@ -437,19 +459,32 @@ def deliver_range_lists(range: Range, participants: typing.Iterable[Participant]
         startrow=1,
     )
 
-def deliver_range_pairs(range: Range, duels: typing.Iterable[Duel], excel_writer: pd.ExcelWriter):
-    df = pd.DataFrame(
-        [
-            {
-                "class": render_class(duel.left),
-                "left": duel.left.name,
-                "_": " " * 16,
-                "right": duel.right.name,
-                "__": " " * 16,
-            }
-            for duel in duels
-        ]
-    ).sort_values(["class", "left", "right",]).reset_index(drop=True)
+
+def deliver_range_pairs(
+    range: Range, duels: typing.Iterable[Duel], excel_writer: pd.ExcelWriter
+):
+    df = (
+        pd.DataFrame(
+            [
+                {
+                    "class": render_class(duel.left),
+                    "left": duel.left.name,
+                    "_": " " * 16,
+                    "right": duel.right.name,
+                    "__": " " * 16,
+                }
+                for duel in duels
+            ]
+        )
+        .sort_values(
+            [
+                "class",
+                "left",
+                "right",
+            ]
+        )
+        .reset_index(drop=True)
+    )
     df.index = df.index + 1
 
     sheet_name = f"Пари Рубіж №{range.value}"
@@ -463,31 +498,28 @@ def deliver_range_pairs(range: Range, duels: typing.Iterable[Duel], excel_writer
     )
 
 
-def deliver_standard_groups(standard_1: list[Participant], standard_2: list[Participant], excel_writer):
+def deliver_standard_groups(
+    standard_1: list[Participant], standard_2: list[Participant], excel_writer
+):
     dataframes = [
-        pd.DataFrame(
-            {
-                "group": f"Група №{idx+1}",
-                "name": [p.name for p in queue]
-            }
-        )
+        pd.DataFrame({"group": f"Група №{idx+1}", "name": [p.name for p in queue]})
         for idx, queue in enumerate([standard_1, standard_2])
     ]
     df = pd.concat(dataframes)
     df = df.reset_index()
     df.index = df.index + 1
-    df = df.set_index(["group", "index",])
+    df = df.set_index(
+        [
+            "group",
+            "index",
+        ]
+    )
 
     sheet_name = "Рубіж №2 Групи Стандарт"
     header_text = sheet_name
     add_sheet_header(excel_writer, header_text, sheet_name, 3)
 
-    df.to_excel(
-        excel_writer,
-        sheet_name=sheet_name,
-        merge_cells=True,
-        startrow=2
-    )
+    df.to_excel(excel_writer, sheet_name=sheet_name, merge_cells=True, startrow=2)
 
 
 def equalize_column_width(excel_writer):
@@ -498,13 +530,18 @@ def equalize_column_width(excel_writer):
         for row in worksheet.rows:
             for cell in row:
                 if cell.value:
-                    dims[cell.column_letter] = max((dims.get(cell.column_letter, 0), len(str(cell.value))))
+                    dims[cell.column_letter] = max(
+                        (dims.get(cell.column_letter, 0), len(str(cell.value)))
+                    )
         for col, value in dims.items():
             worksheet.column_dimensions[col].width = value + 2
 
+
 def add_sheet_header(excel_writer, header_text, sheet_name, width: int):
     workbook: openpyxl.Workbook = excel_writer.book
-    worksheet: openpyxl.worksheet.worksheet.Worksheet = workbook.create_sheet(sheet_name)
+    worksheet: openpyxl.worksheet.worksheet.Worksheet = workbook.create_sheet(
+        sheet_name
+    )
     excel_writer.sheets[sheet_name] = worksheet
     header_font = openpyxl.styles.Font(sz=14, bold=True)
     header_cell = worksheet["A1"]
@@ -515,19 +552,15 @@ def add_sheet_header(excel_writer, header_text, sheet_name, width: int):
 
 
 def merge_queues(queues: list[list[Duel]]) -> list[Duel]:
-    percentages = [
-        [
-            (duel, idx / len(q))
-            for idx, duel in enumerate(q)
-        ]
-        for q in queues
-    ]
-    sorted_duels = sorted(itertools.chain.from_iterable(percentages), key=operator.itemgetter(1))
+    percentages = [[(duel, idx / len(q)) for idx, duel in enumerate(q)] for q in queues]
+    sorted_duels = sorted(
+        itertools.chain.from_iterable(percentages), key=operator.itemgetter(1)
+    )
     return [duel for duel, percentage in sorted_duels]
 
 
 def main():
-    participants = read_participants("participants.csv")
+    participants = read_participants("../../participants.csv")
     queues = build_queues(participants)
 
     for variant_name, variant in QUEUE_VARIANTS.items():
@@ -537,14 +570,12 @@ def main():
         }
 
         range_duels = {
-            range: merge_queues(
-                [queue_duels[queue_name] for queue_name in queue_names]
-            )
+            range: merge_queues([queue_duels[queue_name] for queue_name in queue_names])
             for range, queue_names in variant.items()
         }
 
         try:
-            os.mkdir("out")
+            os.mkdir("../../out")
         except FileExistsError:
             pass
         target_dir = f"out/{variant_name}"
@@ -560,7 +591,9 @@ def main():
             range_participants = set(itertools.chain(*duels))
             deliver_range_lists(range, range_participants, excel_writer)
 
-        deliver_standard_groups(queues[Queue.STANDARD_1], queues[Queue.STANDARD_2], excel_writer)
+        deliver_standard_groups(
+            queues[Queue.STANDARD_1], queues[Queue.STANDARD_2], excel_writer
+        )
 
         for range, duels in range_duels.items():
             deliver_range_pairs(range, duels, excel_writer)
@@ -573,6 +606,6 @@ def main():
 
 # Press the green button in the gutter to run the script.
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/

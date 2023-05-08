@@ -5,15 +5,16 @@ import enum
 
 
 class Category(str, enum.Enum):
-    GENERAL = "Загальна"
-    LADY = "Леді"
+    GENERAL = "G"
+    LADY = "L"
 
 
 class Class(str, enum.Enum):
-    STANDARD = "Стандарт"
-    STANDARD_MANUAL = "Стандарт-мануал"
-    MODIFIED = "Модифікований"
-    OPEN = "Відкритий"
+    STANDARD = "S"
+    STANDARD_MANUAL = "SM"
+    MODIFIED = "M"
+    OPEN = "O"
+    STANDARD_LADY = "SL"
 
 
 class Queue(str, enum.Enum):
@@ -25,25 +26,21 @@ class Queue(str, enum.Enum):
     LADY = "Леді"
 
 
-class Range(enum.Enum):
-    First = 1
-    Second = 2
+class Range(str, enum.Enum):
+    First = "1"
+    Second = "2"
 
 
 @dataclasses.dataclass
 class Participant:
-    number: str
     name: str
-    status: str
-    squad: int
-    category: Category
     clazz: Class
 
     def __lt__(self, other):
         return self.name < other.name
 
     def __hash__(self):
-        return hash(self.number)
+        return hash(self.name)
 
     def __repr__(self):
         return self.name
@@ -58,19 +55,18 @@ class Duel:
         return Duel(self.right, self.left)
 
     def is_valid(self) -> bool:
-        return (self.left.clazz, self.left.category) == (self.right.clazz, self.right.category)
+        return (self.left.clazz, self.left.category) == (
+            self.right.clazz,
+            self.right.category,
+        )
 
     @property
     def clazz(self) -> Class:
         return self.left.clazz
 
-    @property
-    def category(self) -> Category:
-        return self.left.category
-
     def __contains__(self, item):
-        if not isinstance(item, Participant):
-            return super(Duel, self).__contains__(item)
+        # if not isinstance(item, Participant):
+        #     return super(Duel, self).__contains__(item)
         return item == self.left or item == self.right
 
     def __repr__(self):
