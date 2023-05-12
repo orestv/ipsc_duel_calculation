@@ -1,18 +1,10 @@
-import {CLASSES, ClassSetupRequest, Match, MatchSetupRequest, RangeSetupRequest, RANGES} from "../models";
+import {CLASSES, ClassSetupRequest, Match, MatchSetupRequest, RANGES, RangeSetupRequest} from "../models";
 import * as $ from "jquery";
+import {API_ROOT, getMatchSetupFromLocalStorage, saveMatchSetupToLocalStorage} from "../storage";
 
-const LOCAL_STORAGE_KEY = "participants-1";
-const API_ROOT = "http://localhost:5000";
-
-export function saveToLocalStorage() {
-    const participants = buildParticipantRequest();
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(participants))
-}
-
-export function getMatchSetupFromLocalStorage() {
-    const storedParticipants = localStorage.getItem(LOCAL_STORAGE_KEY);
-    const participants: MatchSetupRequest | null = JSON.parse(storedParticipants);
-    return participants;
+function saveToLocalStorage() {
+    const matchSetup = buildParticipantRequest();
+    saveMatchSetupToLocalStorage(matchSetup);
 }
 
 export function loadFromLocalStorage() {
@@ -41,7 +33,6 @@ export function generatePairs() {
 }
 
 function renderMatch(match: Match) {
-    console.log(match)
     $("#container-result").show();
     $("#tbodyRange1").empty();
     $("#tbodyRange2").empty();

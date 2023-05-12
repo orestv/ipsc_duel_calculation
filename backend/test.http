@@ -40,3 +40,31 @@ Content-Type: application/json
     }
   }
 }
+
+### Failing request
+POST http://localhost:5000/duels
+Content-Type: application/json
+
+{
+  "ranges": {
+    "1": {
+      "classes": {
+        "S": {
+          "participants": [
+            "Волощук",
+            "Рогозін",
+            "Шатєєв",
+            "Ремез",
+            "Вострес",
+            "Папа",
+            "Козаченко"
+          ],
+          "twice": false
+        }
+      }
+    },
+    "2": {
+      "classes": {}
+    }
+  }
+}

@@ -56,15 +56,17 @@ def merge_queues(queues: list[list[Duel]]) -> list[Duel]:
     )
     return [duel for duel, percentage in sorted_duels]
 
-
+# Todo: fix balancing
 def _fix_disbalanced_pairs(duels: list[Duel]) -> list[Duel]:
     participants = {d.left for d in duels} | {d.right for d in duels}
     participants_leftright = []
+    # Calculate number of left/right occurrences for each participant
     for p in participants:
         count_left = len([d for d in duels if d.left == p])
         count_right = len([d for d in duels if d.right == p])
         participants_leftright.append((count_left, count_right, p))
 
+    # Find participants who have 2+ difference between their left and right duel sides
     disbalanced_participants = [
         (count_left, count_right, p)
         for count_left, count_right, p in participants_leftright
@@ -72,6 +74,8 @@ def _fix_disbalanced_pairs(duels: list[Duel]) -> list[Duel]:
     ]
     if not disbalanced_participants:
         return duels
+
+
     result = duels[:]
     disbalanced_participants.sort()
     half_length = len(disbalanced_participants) // 2
@@ -85,13 +89,12 @@ def _fix_disbalanced_pairs(duels: list[Duel]) -> list[Duel]:
 
         old_duel = Duel(pright, pleft)
         new_duel = Duel(pleft, pright)
-        idx = result.index(old_duel)
-        result[idx] = new_duel
+        try:
+            idx = result.index(old_duel)
+            result[idx] = new_duel
+        except ValueError:
+            continue
 
-    for p in participants:
-        count_left = len([d for d in result if d.left == p])
-        count_right = len([d for d in result if d.right == p])
-        participants_leftright.append((count_left, count_right, p))
     return result
 
 

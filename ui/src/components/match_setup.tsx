@@ -1,11 +1,18 @@
 import React, {useEffect, useState} from "react";
-import {getMatchSetupFromLocalStorage} from "../legacy/legacy";
 import {CLASSES, ClassSetupRequest, MatchSetupRequest, RANGES} from "../models";
 import ClassSetup from "./class_setup";
+import {API_ROOT, getMatchSetupFromLocalStorage, saveMatchSetupToLocalStorage} from "../storage";
 
-export default function MatchSetup() {
+export interface MatchSetupProps {
+    onMatchSetup: (r: MatchSetupRequest) => void
+}
+
+export default function MatchSetup(props: MatchSetupProps) {
     const defaultMatchSetup: MatchSetupRequest = {
-        ranges: {}
+        ranges: {
+            "1": {classes: {}},
+            "2": {classes: {}},
+        }
     }
 
     const [matchSetup, setMatchSetup] = useState(defaultMatchSetup)
@@ -13,7 +20,6 @@ export default function MatchSetup() {
     const participantsChangedHandler = function(range: string, clazz: string, c: ClassSetupRequest) {
         setMatchSetup(
             {
-                ...matchSetup,
                 ranges: {
                     ...matchSetup.ranges,
                     [range]: {
@@ -34,6 +40,24 @@ export default function MatchSetup() {
         },
         []
     )
+    useEffect(
+        () => {
+            saveMatchSetupToLocalStorage(matchSetup)
+            props.onMatchSetup(matchSetup)
+            const dataFetch = async () => {
+                const requestOptions = {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify(matchSetup),
+                }
+                const data = await (
+                    await fetch(`${API_ROOT}/duels`, requestOptions)
+                ).json()
+            }
+            dataFetch()
+        },
+        [matchSetup]
+    )
 
     const ranges = []
     for (const range of RANGES) {
@@ -44,7 +68,7 @@ export default function MatchSetup() {
         for (const clazz of CLASSES) {
             const setup = classes[clazz] || defaultSetup
             classControls.push(
-                <div className="col">
+                <div className="col" key={`${range}-${clazz}`}>
                     <ClassSetup
                         className={clazz}
                         classSetup={setup}
@@ -53,18 +77,16 @@ export default function MatchSetup() {
             )
         }
         ranges.push(
-            <>
-                <div className="row">
-                    <h1>Рубіж {range}</h1>
-                    { classControls }
-                </div>
-            </>
+            <div className="row py-3" key={range}>
+                <h1>Рубіж {range}</h1>
+                { classControls }
+            </div>
         )
     }
 
-    return <div className="container-fluid py-3">
-        <form action="#">
+    return (
+        <>
             { ranges }
-        </form>
-    </div>
+        </>
+    )
 }

@@ -19,7 +19,7 @@ export default function ClassSetup(props: ClassSetupProps) {
     const textAreaValue = props.classSetup.participants.join("\n")
 
     const parseParticipants = function(val: string) : string[] {
-        return val.split("\n").filter((p) => p.length > 0)
+        return val.split("\n")//.filter((p) => p.length > 0)
     }
 
     const changeHandler = function(e: React.ChangeEvent<HTMLTextAreaElement>) {
@@ -30,12 +30,14 @@ export default function ClassSetup(props: ClassSetupProps) {
         })
     }
 
+    const nonEmptyParticipants = props.classSetup.participants.filter((p) => p.length > 0)
+
     return (
         <>
             <div className="col">
                 <h2>
                     {classNames[props.className]}
-                    <span className="badge bg-secondary">{props.classSetup.participants.length}</span>
+                    <span className="badge badge-primary bg-primary mx-2">{nonEmptyParticipants.length}</span>
                 </h2>
 
                 <textarea
