@@ -9,11 +9,11 @@ const HTMLWebpackPluginConfig = new HtmlWebpackPlugin({
 });
 
 module.exports = {
-    entry: './src/index.ts',
+    entry: './src/index.tsx',
     module: {
         rules: [
             {
-                test: /\.ts?$/,
+                test: /\.tsx?$/,
                 use: 'ts-loader',
                 exclude: /node_modules/,
             },
