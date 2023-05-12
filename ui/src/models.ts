@@ -1,12 +1,12 @@
-export interface ParticipantListRequest {
-    ranges: { [key: string]: RangeRequest };
+export interface MatchSetupRequest {
+    ranges: { [key: string]: RangeSetupRequest };
 }
 
-export interface RangeRequest {
-    classes: {  [key: string] : ClassParticipantList };
+export interface RangeSetupRequest {
+    classes: {  [key: string] : ClassSetupRequest };
 }
 
-export interface ClassParticipantList {
+export interface ClassSetupRequest {
     participants: string[];
     twice:        boolean;
 }
@@ -24,3 +24,6 @@ export interface Duel {
 export interface Participant {
     name: string
 }
+
+export const CLASSES = ["S", "SL", "SM", "M", "O"];
+export const RANGES = ["1", "2"];

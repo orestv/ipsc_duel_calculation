@@ -1,19 +1,22 @@
-import {ClassParticipantList, Match, ParticipantListRequest, RangeRequest} from "../models";
+import {CLASSES, ClassSetupRequest, Match, MatchSetupRequest, RangeSetupRequest, RANGES} from "../models";
 import * as $ from "jquery";
 
 const LOCAL_STORAGE_KEY = "participants-1";
 const API_ROOT = "http://localhost:5000";
-const CLASSES = ["S", "SL", "SM", "M", "O"];
-const RANGES = ["1", "2"];
 
 export function saveToLocalStorage() {
     const participants = buildParticipantRequest();
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(participants))
 }
 
-export function loadFromLocalStorage() {
+export function getMatchSetupFromLocalStorage() {
     const storedParticipants = localStorage.getItem(LOCAL_STORAGE_KEY);
-    const participants: ParticipantListRequest | null = JSON.parse(storedParticipants);
+    const participants: MatchSetupRequest | null = JSON.parse(storedParticipants);
+    return participants;
+}
+
+export function loadFromLocalStorage() {
+    const participants = getMatchSetupFromLocalStorage();
     if (participants == null) {
         return;
     }
@@ -55,10 +58,10 @@ function renderMatch(match: Match) {
     }
 }
 
-function buildParticipantRequest(): ParticipantListRequest {
+function buildParticipantRequest(): MatchSetupRequest {
     const ranges = ["1", "2"]
 
-    let result: ParticipantListRequest = {
+    let result: MatchSetupRequest = {
         ranges: {}
     };
     for (const range of RANGES) {
@@ -67,8 +70,8 @@ function buildParticipantRequest(): ParticipantListRequest {
     return result
 }
 
-function getRangeClasses(range: string): RangeRequest {
-    let result: RangeRequest = {
+function getRangeClasses(range: string): RangeSetupRequest {
+    let result: RangeSetupRequest = {
         classes: {}
     }
     for (const clazz of CLASSES) {
@@ -80,7 +83,7 @@ function getRangeClasses(range: string): RangeRequest {
     return result
 }
 
-function getClassParticipants(range: string, clazz: string): ClassParticipantList {
+function getClassParticipants(range: string, clazz: string): ClassSetupRequest {
     const participants = getEnteredParticipantList(range, clazz);
     const twice = false;
     return {participants, twice}
