@@ -1,5 +1,6 @@
 import pydantic
 import litestar
+from litestar.config.cors import CORSConfig
 
 import duels.model
 import duels.comp
@@ -56,7 +57,7 @@ class DuelsController(litestar.Controller):
             for rng, d in result.items()
         }
 
-        result = {
+        result = Duels(ranges={
             rng: [
                 Duel(
                     left=Participant(name=duel.left.name),
@@ -66,10 +67,11 @@ class DuelsController(litestar.Controller):
                 for duel in range_duels
             ]
             for rng, range_duels in result.items()
-        }
+        })
         return result
 
 
 app = litestar.Litestar(
     route_handlers=[DuelsController],
+    cors_config=CORSConfig(allow_origins=["http://localhost:4000"])
 )

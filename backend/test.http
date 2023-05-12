@@ -24,6 +24,19 @@ Content-Type: application/json
           "twice": true
         }
       }
+    },
+    "2": {
+      "classes": {
+        "SL": {
+          "participants": [
+            "Victoria Papa",
+            "Iryna Skyts",
+            "Anastasiia Matsekh",
+            "Sofiia Lysiuk"
+          ],
+          "twice": true
+        }
+      }
     }
   }
 }
