@@ -1,5 +1,6 @@
 import itertools
 import operator
+import random
 
 from model import Category, Class, Range, Participant, Duel, Queue
 
@@ -9,6 +10,7 @@ NONCE = Participant("", Class.STANDARD)
 
 def generate_duels(participants: list[Participant], repeat: bool) -> list[Duel]:
     participants = participants[:]
+    # random.shuffle(participants)
     if len(participants) % 2 != 0:
         participants.append(NONCE)
 
