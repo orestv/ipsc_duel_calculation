@@ -17,12 +17,13 @@ const classNames: { [key: string]: string } = {
 
 export default function ClassSetup(props: ClassSetupProps) {
     const textAreaValue = props.classSetup.participants.join("\n")
-    const [value, setValue] = useState(textAreaValue);
 
-    const participants = value.split("\n").filter((p) => p.length > 0)
+    const parseParticipants = function(val: string) : string[] {
+        return val.split("\n").filter((p) => p.length > 0)
+    }
 
     const changeHandler = function(e: React.ChangeEvent<HTMLTextAreaElement>) {
-        setValue(e.target.value)
+        const participants = parseParticipants(e.target.value)
         props.onParticipantsChanged({
             participants: participants,
             twice: false,
@@ -34,13 +35,13 @@ export default function ClassSetup(props: ClassSetupProps) {
             <div className="col">
                 <h2>
                     {classNames[props.className]}
-                    <span className="badge bg-secondary">{participants.length}</span>
+                    <span className="badge bg-secondary">{props.classSetup.participants.length}</span>
                 </h2>
 
                 <textarea
                     rows={8}
                     className="form-control"
-                    value={value}
+                    value={textAreaValue}
                     onChange={changeHandler}
                 />
             </div>

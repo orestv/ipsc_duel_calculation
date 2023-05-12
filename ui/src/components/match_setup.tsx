@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from "react";
-import RangeSetup from "./range_setup";
 import {getMatchSetupFromLocalStorage} from "../legacy/legacy";
-import {ClassSetupRequest, MatchSetupRequest, RANGES} from "../models";
+import {CLASSES, ClassSetupRequest, MatchSetupRequest, RANGES} from "../models";
+import ClassSetup from "./class_setup";
 
 export default function MatchSetup() {
     const defaultMatchSetup: MatchSetupRequest = {
@@ -38,16 +38,27 @@ export default function MatchSetup() {
     const ranges = []
     for (const range of RANGES) {
         const r = matchSetup.ranges[range];
+        const defaultSetup: ClassSetupRequest = {participants: [], twice: false}
         const classes = r ? r.classes : {}
+        const classControls = []
+        for (const clazz of CLASSES) {
+            const setup = classes[clazz] || defaultSetup
+            classControls.push(
+                <div className="col">
+                    <ClassSetup
+                        className={clazz}
+                        classSetup={setup}
+                        onParticipantsChanged={(c) => participantsChangedHandler(range, clazz, c)}/>
+                </div>
+            )
+        }
         ranges.push(
-            <RangeSetup
-                key={range}
-                number={range}
-                classes={classes}
-                onParticipantsChanged={
-                    (clazz, c) => participantsChangedHandler(range, clazz, c)
-                }
-            />
+            <>
+                <div className="row">
+                    <h1>Рубіж {range}</h1>
+                    { classControls }
+                </div>
+            </>
         )
     }
 
