@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useState} from "react";
 import ClassSetup, {ClassSetupProps} from "./class_setup";
 import {CLASSES, ClassSetupRequest} from "../models";
 
@@ -11,14 +11,18 @@ export interface RangeSetupProps {
 export default function RangeSetup(props: RangeSetupProps) {
     const classSetups = [];
 
+    const defaultClassSetup : ClassSetupRequest = {
+        participants: [],
+        twice: false,
+    }
+
     for (const clazz of CLASSES) {
-        const participants = props.classes[clazz] ? props.classes[clazz].participants : []
+        const classSetup = props.classes[clazz] || defaultClassSetup
         classSetups.push(
             <ClassSetup
                 key={clazz}
                 className={clazz}
-                participants={participants}
-                twice={false}
+                classSetup={classSetup}
                 onParticipantsChanged={(p) => {props.onParticipantsChanged(clazz, p)}}
             />
         )

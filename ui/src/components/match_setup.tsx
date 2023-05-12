@@ -25,7 +25,6 @@ export default function MatchSetup() {
                 }
             }
         )
-        console.log(matchSetup)
     }
 
     useEffect(
