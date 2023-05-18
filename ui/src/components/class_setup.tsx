@@ -44,7 +44,7 @@ export default function ClassSetup(props: ClassSetupProps) {
             <div className="col">
                 <h2>
                     {classNames[props.className]}
-                    <span className="badge badge-primary bg-primary mx-2">{nonEmptyParticipants.length}</span>
+                    <span className="badge badge-primary bg-secondary mx-2">{nonEmptyParticipants.length}</span>
                 </h2>
 
                 <div className="form-check form-switch">

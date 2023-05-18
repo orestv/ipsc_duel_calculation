@@ -31,8 +31,11 @@ export default function MatchSetup(props: MatchSetupProps) {
     const defaultSetup: ClassSetupRequest = {participants: [], twice: false}
     const classes = r ? r.classes : {}
     const classControls = []
+    let participantCount = 0;
+
     for (const clazz of CLASSES) {
       const setup = classes[clazz] || defaultSetup
+      participantCount += setup.participants.filter((p) => (p.length > 0)).length
       classControls.push(
         <div className="col" key={`${range}-${clazz}`}>
           <ClassSetup
@@ -44,7 +47,10 @@ export default function MatchSetup(props: MatchSetupProps) {
     }
     ranges.push(
       <div className="row py-3" key={range}>
-        <h1>Рубіж {range}</h1>
+        <h1>
+          Рубіж {range}
+          <span className="badge badge-primary bg-secondary mx-2">{participantCount}</span>
+        </h1>
         {classControls}
       </div>
     )
