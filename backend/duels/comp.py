@@ -1,9 +1,7 @@
 import itertools
 import operator
-import random
 
-from model import Category, Class, Range, Participant, Duel, Queue
-
+from model import Class, Participant, Duel
 
 NONCE = Participant("", Class.STANDARD)
 

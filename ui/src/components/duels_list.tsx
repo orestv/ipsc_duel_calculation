@@ -50,7 +50,6 @@ export default function DuelsList(props: DuelsListProps) {
     }
     return (
         <>
-            <h1>Дуелі</h1>
             <div className="row">
                 {ranges}
             </div>

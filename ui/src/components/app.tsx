@@ -48,7 +48,6 @@ export default function App() {
           headers: {
             "Content-Type": "application/json",
           },
-          mode: "cors",
           body: JSON.stringify(matchSetup),
         }
       );
@@ -59,6 +58,26 @@ export default function App() {
     })()
     saveMatchSetupToLocalStorage(matchSetup);
   }, [matchSetup])
+
+  async function handleExcelDownloadClicked() {
+    const response = await fetch(
+      `${API_ROOT}/duels/excel`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(matchSetup),
+      }
+    )
+    const responseBody = await response.blob()
+    const url = URL.createObjectURL(new Blob([responseBody]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', 'duels.txt')
+    document.body.appendChild(link)
+    link.click()
+    link.parentNode.removeChild(link)
+  }
 
   return (
     <>
@@ -81,6 +100,8 @@ export default function App() {
         <MatchSetup onMatchSetup={handleMatchSetup} matchSetup={matchSetup}/>
       </div>
       <div className="container-fluid my-4">
+        <h1>Дуелі</h1>
+        <button type="button" className="btn btn-primary" onClick={handleExcelDownloadClicked}>Скачати відомість</button>
         <DuelsList match={match} isLoading={isLoading}/>
       </div>
 
