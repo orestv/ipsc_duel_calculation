@@ -9,7 +9,7 @@ export default function App() {
   const [matchSetup, setMatchSetup] = useState(EmptyMatchSetupRequest())
   const [match, setMatch] = useState(null)
   const [isLoading, setLoading] = useState(false)
-  const [isMatchLoaderVisible, setMatchLoaderVisible] = useState(true)
+  const [isMatchLoaderVisible, setMatchLoaderVisible] = useState(false)
 
   const handleMatchSetup = function (r: MatchSetupRequest) {
     setMatchSetup(r)
@@ -24,6 +24,11 @@ export default function App() {
 
   const handleMatchLoaded = function(r:  MatchSetupRequest) {
     setMatchSetup(r)
+    setMatchLoaderVisible(false)
+  }
+
+  const handleMatchLoaderCanceled = () => {
+    setMatchLoaderVisible(false)
   }
 
   useEffect(
@@ -70,7 +75,7 @@ export default function App() {
         </div>
       </nav>
       <div className="container-fluid my-4">
-        <MatchLoader visible={isMatchLoaderVisible} onMatchLoaded={handleMatchLoaded}/>
+        <MatchLoader visible={isMatchLoaderVisible} onMatchLoaded={handleMatchLoaded} onCanceled={handleMatchLoaderCanceled}/>
       </div>
       <div className="container-fluid my-4">
         <MatchSetup onMatchSetup={handleMatchSetup} matchSetup={matchSetup}/>
