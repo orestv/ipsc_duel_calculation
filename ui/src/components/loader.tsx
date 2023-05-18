@@ -1,9 +1,36 @@
 import React, {useState} from "react";
-import {EmptyMatchSetupRequest, MatchSetupRequest} from "../models";
+import {CLASSES, EmptyMatchSetupRequest, MatchSetupRequest} from "../models";
 
 export interface MatchLoaderProps {
   visible: boolean
-  onMatchLoaded: (m:   MatchSetupRequest) => void
+  onMatchLoaded: (m: MatchSetupRequest) => void
+}
+
+interface Participant {
+  name: string
+  clazz: string
+}
+
+function convertClass(classVerbose: string, category: string): string {
+  const mapping: { [key: string]: string } = {
+    "Стандарт": "S",
+    "Стандарт-мануал": "SM",
+    "Модифікований": "M",
+    "Відкритий": "O"
+  }
+  const clazz = mapping[classVerbose]
+  if (clazz == "S" && category == "Леді")
+    return "SL"
+  console.log(classVerbose, category)
+  return clazz
+}
+
+function getParticipant(chunk: string[]): Participant {
+  const name = chunk[1]
+  const clazzVerbose = chunk[chunk.length-1]
+  const category = chunk.length == 6 ? chunk[chunk.length-2] : "Загальна"
+  const clazz = convertClass(clazzVerbose, category)
+  return {name: name, clazz: clazz}
 }
 
 function getDefaultTAValue() {
@@ -248,6 +275,47 @@ function getDefaultTAValue() {
 
 function getMatchSetup(taValue: string): MatchSetupRequest {
   let result = EmptyMatchSetupRequest()
+  const rows = taValue.trim().split("\n")
+  const re = new RegExp("[0-9]{1,2}\\.")
+  let indices = rows.map((val, idx, _) => {
+    if (re.test(val)) {
+      return idx
+    }
+  }).filter((val) => {
+    return val != null
+  })
+  indices.push(rows.length)
+
+  let indexPairs: number[][] = []
+  for (let idx = 0; idx < indices.length - 1; idx++) {
+    indexPairs.push([indices[idx], indices[idx + 1]])
+  }
+
+  let chunks: string[][] = []
+
+  for (const [first, last] of indexPairs) {
+    chunks.push(rows.slice(first, last))
+  }
+
+  const participants = chunks.map(getParticipant)
+  console.log(participants)
+
+  const classList = CLASSES.map(
+    (clazz) => {
+      const classParticipants = participants
+        .filter((p) => (p.clazz == clazz))
+        .map((p) => (p.name))
+      return {
+        "clazz": clazz,
+        "participants": classParticipants,
+        "twice": false,
+      }
+    }
+  )
+
+  const rangeSetup = Object.fromEntries(classList.map(({clazz, ...rest}) => ([clazz, rest])))
+
+  result.ranges["1"].classes = rangeSetup
 
   return result
   // return {
@@ -265,7 +333,7 @@ function getMatchSetup(taValue: string): MatchSetupRequest {
 export default function MatchLoader(props: MatchLoaderProps) {
   const [taValue, setTaValue] = useState(getDefaultTAValue())
 
-  const handleTextAreaValueChanged = function(e: React.ChangeEvent<HTMLTextAreaElement>) {
+  const handleTextAreaValueChanged = function (e: React.ChangeEvent<HTMLTextAreaElement>) {
     const newValue = e.target.value;
     setTaValue(newValue)
     const matchSetup = getMatchSetup(taValue)
