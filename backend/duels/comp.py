@@ -9,6 +9,8 @@ NONCE = Participant("", Class.STANDARD)
 
 
 def generate_duels(participants: list[Participant], repeat: bool) -> list[Duel]:
+    if not participants:
+        return list()
     participants = participants[:]
     # random.shuffle(participants)
     if len(participants) % 2 != 0:

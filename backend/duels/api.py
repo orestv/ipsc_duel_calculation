@@ -1,5 +1,9 @@
+import logging
+import traceback
+
 import pydantic
 import litestar
+import litestar.exceptions
 from litestar.config.cors import CORSConfig
 
 import duels.model
@@ -71,7 +75,17 @@ class DuelsController(litestar.Controller):
         return result
 
 
+def logging_exception_handler(_: litestar.Request, exc: Exception) -> litestar.Response:
+    logging.exception(exc)
+    return litestar.Response(
+        media_type=litestar.MediaType.JSON,
+        content={"error": str(exc)},
+        status_code=500,
+    )
+
+
 app = litestar.Litestar(
     route_handlers=[DuelsController],
-    cors_config=CORSConfig(allow_origins=["http://localhost:4000"])
+    cors_config=CORSConfig(allow_origins=["http://localhost:4000"]),
+    exception_handlers={Exception: logging_exception_handler},
 )
