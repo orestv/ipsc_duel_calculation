@@ -7,8 +7,8 @@ import os
 
 import pandas as pd
 
-from duels.comp_excel import render_class, deliver_participants, deliver_range_lists, deliver_range_pairs, \
-    deliver_standard_groups, equalize_column_width, add_sheet_header
+from duels.comp_excel import _deliver_participants, _deliver_range_lists, _deliver_range_pairs, \
+    _deliver_standard_groups, _equalize_column_width, deliver_sorted_pairs
 
 pd.options.plotting.backend = "plotly"
 # import matplotlib.pyplot as plt
@@ -313,51 +313,6 @@ def build_queues(participants: list[Participant]) -> dict[Queue, list[Participan
     return queues
 
 
-def deliver_sorted_pairs(range_queues, excel_writer: pd.ExcelWriter):
-    for r, q in range_queues.items():
-        # delays = get_participant_delays(q)
-        q_items = [
-            {
-                "number": idx + 1,
-                "class": render_class(duel.left),
-                "left": duel.left.name,
-                "delay_left": None,
-                "_": " " * 16,
-                "right": duel.right.name,
-                "delay_right": None,
-                "__": " " * 16,
-                # "left_delay": delays[idx][0][0],
-                # "right_delay": delays[idx][0][1]
-            }
-            for idx, duel in enumerate(q)
-        ]
-        df = pd.DataFrame(q_items)
-
-        df_delays = df[["left", "right"]]
-        df_delays["n"] = df_delays.index + 1
-
-        participants = list(pd.concat([df_delays.left, df_delays.right]).unique())
-        for p in participants:
-            d = df_delays[(df_delays.left == p) | (df_delays.right == p)]
-            d = d.join(d.shift(-1), rsuffix="_next")
-            d["delay"] = (d.n_next - d.n).astype(int, errors="ignore")
-            df["delay_left"].update(d[(d.left == p)].delay)
-            df["delay_right"].update(d[(d.right == p)].delay)
-
-        df[["delay_left", "delay_right"]].fillna("F", inplace=True)
-
-        sheet_name = f"Пари Рубіж {r.value} Сортовані"
-        header_text = sheet_name
-        add_sheet_header(excel_writer, header_text, sheet_name, 6)
-        df.to_excel(
-            excel_writer,
-            sheet_name=sheet_name,
-            index=False,
-            header=False,
-            startrow=1,
-        )
-
-
 def merge_queues(queues: list[list[Duel]]) -> list[Duel]:
     percentages = [[(duel, idx / len(q)) for idx, duel in enumerate(q)] for q in queues]
     sorted_duels = sorted(
@@ -392,21 +347,21 @@ def main():
             pass
         excel_writer = pd.ExcelWriter(f"{target_dir}/pairs_{variant_name}.xlsx")
 
-        deliver_participants(participants, excel_writer)
+        _deliver_participants(participants, excel_writer)
 
         for range, duels in range_duels.items():
             range_participants = set(itertools.chain(*duels))
-            deliver_range_lists(range, range_participants, excel_writer)
+            _deliver_range_lists(range, range_participants, excel_writer)
 
-        deliver_standard_groups(
+        _deliver_standard_groups(
             queues[Queue.STANDARD_1], queues[Queue.STANDARD_2], excel_writer
         )
 
         for range, duels in range_duels.items():
-            deliver_range_pairs(range, duels, excel_writer)
+            _deliver_range_pairs(range, duels, excel_writer)
 
         deliver_sorted_pairs(range_duels, excel_writer)
-        equalize_column_width(excel_writer)
+        _equalize_column_width(excel_writer)
 
         excel_writer.save()
 

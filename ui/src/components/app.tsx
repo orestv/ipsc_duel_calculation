@@ -73,7 +73,7 @@ export default function App() {
     const url = URL.createObjectURL(new Blob([responseBody]))
     const link = document.createElement('a')
     link.href = url
-    link.setAttribute('download', 'duels.txt')
+    link.setAttribute('download', 'duels.xlsx')
     document.body.appendChild(link)
     link.click()
     link.parentNode.removeChild(link)

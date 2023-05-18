@@ -1,52 +1,23 @@
 import logging
 import tempfile
-import traceback
 
-import pydantic
 import litestar
 import litestar.exceptions
 from litestar.config.cors import CORSConfig
 from litestar.response_containers import File
-import pandas as pd
 
 import duels
 import duels.model
 import duels.comp
 import duels.comp_excel
-from duels.comp_excel import deliver_participants
-
-
-class ClassSetup(pydantic.BaseModel):
-    participants: list[str]
-    twice: bool
-
-
-class RangeSetup(pydantic.BaseModel):
-    classes: dict[duels.model.Class, ClassSetup]
-
-
-class MatchSetup(pydantic.BaseModel):
-    ranges: dict[duels.model.Range, RangeSetup]
-
-
-class Participant(pydantic.BaseModel):
-    name: str
-
-
-class Duel(pydantic.BaseModel):
-    left: Participant
-    right: Participant
-    clazz: duels.model.Class
-
-
-class Duels(pydantic.BaseModel):
-    ranges: dict[duels.model.Range, list[Duel]]
+from . import comp_excel
+from duels.api_models import MatchSetup, Participant, Duel, Duels
 
 
 class DuelsController(litestar.Controller):
     path = "/duels"
 
-    @litestar.post()
+    @litestar.post(sync_to_thread=True)
     def get_duels(self, data: MatchSetup) -> Duels:
         result = self._generate_duels(data)
 
@@ -63,34 +34,16 @@ class DuelsController(litestar.Controller):
         })
         return result
 
-    @litestar.post("/excel")
+    @litestar.post("/excel", sync_to_thread=True)
     def get_duels_excel(self, data: MatchSetup) -> File:
         range_duels = self._generate_duels(data)
-        with tempfile.NamedTemporaryFile(delete=False) as f:
-            f.write(b"Hello world!\n")
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as f:
+            pass
 
-        # excel_writer = pd.ExcelWriter("/tmp/out.xlsx")
-        #
-        # deliver_participants()
-        #
-        # duels.comp_excel.deliver_participants(participants, excel_writer)
-        #
-        # for range, duels in range_duels.items():
-        #     range_participants = set(itertools.chain(*duels))
-        #     deliver_range_lists(range, range_participants, excel_writer)
-        #
-        # deliver_standard_groups(
-        #     queues[Queue.STANDARD_1], queues[Queue.STANDARD_2], excel_writer
-        # )
-        #
-        # for range, duels in range_duels.items():
-        #     deliver_range_pairs(range, duels, excel_writer)
-        #
-        # deliver_sorted_pairs(range_duels, excel_writer)
-        # equalize_column_width(excel_writer)
-        #
-        # excel_writer.save()
-        return File(path=f.name, filename="today.txt")
+        path = f.name
+
+        comp_excel.deliver_excel(range_duels, path)
+        return File(path=path, filename="pairs.xlsx")
 
     def _generate_duels(self, match_setup: MatchSetup):
         result = {
