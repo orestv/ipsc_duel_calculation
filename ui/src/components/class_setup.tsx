@@ -22,11 +22,18 @@ export default function ClassSetup(props: ClassSetupProps) {
         return val.split("\n")//.filter((p) => p.length > 0)
     }
 
-    const changeHandler = function(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    const taChangeHandler = function(e: React.ChangeEvent<HTMLTextAreaElement>) {
         const participants = parseParticipants(e.target.value)
         props.onParticipantsChanged({
+            ...props.classSetup,
             participants: participants,
-            twice: false,
+        })
+    }
+    const twiceChangeHandler = function(e: React.ChangeEvent<HTMLInputElement>) {
+        const newChecked = e.target.checked
+        props.onParticipantsChanged({
+            ...props.classSetup,
+            twice: newChecked
         })
     }
 
@@ -40,11 +47,22 @@ export default function ClassSetup(props: ClassSetupProps) {
                     <span className="badge badge-primary bg-primary mx-2">{nonEmptyParticipants.length}</span>
                 </h2>
 
+                <div className="form-check form-switch">
+                    <input type="checkbox"
+                           role="switch"
+                           className="form-check-input"
+                           id="switchTwice"
+                           checked={props.classSetup.twice}
+                           onChange={twiceChangeHandler}
+                    />
+                    <label htmlFor="switchTwice" className="form-check-label">Двічі</label>
+                </div>
+
                 <textarea
                     rows={8}
                     className="form-control"
                     value={textAreaValue}
-                    onChange={changeHandler}
+                    onChange={taChangeHandler}
                 />
             </div>
         </>
