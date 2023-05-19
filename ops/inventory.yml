@@ -1,0 +1,5 @@
+machines:
+  hosts:
+    vm01:
+      ansible_host: 34.118.92.194
+      ansible_user: orest_v

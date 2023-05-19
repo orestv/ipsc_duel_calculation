@@ -1,7 +1,7 @@
 import {MatchSetupRequest} from "./models";
 
 const LOCAL_STORAGE_KEY = "participants-1";
-export const API_ROOT = "http://localhost:5000";
+export const API_ROOT = "";
 
 export function saveMatchSetupToLocalStorage(participants: MatchSetupRequest) {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(participants))

@@ -1,0 +1,31 @@
+- name: Duelist deployment
+  hosts: machines
+  tasks:
+    - name: Install certbot
+      become: yes
+      ansible.builtin.apt:
+        pkg:
+          - nginx
+          - certbot
+          - python3-certbot-nginx
+#
+    - name: Extract the front-end
+      become: yes
+      ansible.builtin.unarchive:
+        src: ../dist/ui.tar.xz
+        dest: /var/www/html
+
+    - name: Pull the backend
+      community.docker.docker_image:
+        name: europe-central2-docker.pkg.dev/duelscalculator/duels-all/backend
+        tag: latest
+        source: pull
+        force_source: true
+
+    - name: Run the backend
+      community.docker.docker_container:
+        image: europe-central2-docker.pkg.dev/duelscalculator/duels-all/backend:latest
+        name: duels_backend
+        published_ports: 8080:80
+        restart: true
+        restart_policy: "unless-stopped"

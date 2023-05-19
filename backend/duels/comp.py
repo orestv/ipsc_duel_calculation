@@ -1,7 +1,7 @@
 import itertools
 import operator
 
-from model import Class, Participant, Duel
+from duels.model import Class, Participant, Duel
 
 NONCE = Participant("", Class.STANDARD)
 
