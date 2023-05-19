@@ -38,6 +38,9 @@ module.exports = {
         port: 4000,
         compress: true,
         watchFiles: ["./src/*"],
+        proxy: {
+            '/duels': 'http://localhost:4200'
+        }
     },
     devtool: 'source-map'
 };
