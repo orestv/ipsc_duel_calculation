@@ -8,6 +8,10 @@ const HTMLWebpackPluginConfig = new HtmlWebpackPlugin({
     inject: 'body'
 });
 const FaviconsWebpackPlugin = require('favicons-webpack-plugin')
+const FaviconsWebpackPluginConfig = new FaviconsWebpackPlugin({
+    logo: 'static/favicon.png',
+    mode: 'light',
+})
 
 module.exports = {
     entry: './src/index.tsx',
@@ -33,7 +37,7 @@ module.exports = {
     },
     plugins: [
         HTMLWebpackPluginConfig,
-        new FaviconsWebpackPlugin('static/favicon.png')
+        FaviconsWebpackPluginConfig,
     ],
     devServer: {
         static: path.join(__dirname, "dist"),
