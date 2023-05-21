@@ -7,8 +7,14 @@ import os
 
 import pandas as pd
 
-from duels.comp_excel import _deliver_participants, _deliver_range_lists, _deliver_range_pairs, \
-    _deliver_standard_groups, _equalize_column_width, deliver_sorted_pairs
+from duels.comp_excel import (
+    _deliver_participants,
+    _deliver_range_lists,
+    _deliver_range_pairs,
+    _deliver_groups,
+    _equalize_column_width,
+    deliver_sorted_pairs,
+)
 
 pd.options.plotting.backend = "plotly"
 # import matplotlib.pyplot as plt
@@ -353,7 +359,7 @@ def main():
             range_participants = set(itertools.chain(*duels))
             _deliver_range_lists(range, range_participants, excel_writer)
 
-        _deliver_standard_groups(
+        _deliver_groups(
             queues[Queue.STANDARD_1], queues[Queue.STANDARD_2], excel_writer
         )
 

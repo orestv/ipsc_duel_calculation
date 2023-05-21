@@ -21,23 +21,25 @@ class DuelsController(litestar.Controller):
     def get_duels(self, data: MatchSetup) -> Duels:
         result = self._generate_duels(data)
 
-        result = Duels(ranges={
-            rng: [
-                Duel(
-                    left=Participant(name=duel.left.name),
-                    right=Participant(name=duel.right.name),
-                    clazz=duel.clazz,
-                )
-                for duel in range_duels
-            ]
-            for rng, range_duels in result.items()
-        })
+        result = Duels(
+            ranges={
+                rng: [
+                    Duel(
+                        left=Participant(name=duel.left.name),
+                        right=Participant(name=duel.right.name),
+                        clazz=duel.clazz,
+                    )
+                    for duel in range_duels
+                ]
+                for rng, range_duels in result.items()
+            }
+        )
         return result
 
     @litestar.post("/excel", sync_to_thread=True)
     def get_duels_excel(self, data: MatchSetup) -> File:
         range_duels = self._generate_duels(data)
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as f:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as f:
             pass
 
         path = f.name
@@ -59,10 +61,7 @@ class DuelsController(litestar.Controller):
             ]
             for rng, range_setup in match_setup.ranges.items()
         }
-        result = {
-            rng: duels.comp.merge_queues(d)
-            for rng, d in result.items()
-        }
+        result = {rng: duels.comp.merge_queues(d) for rng, d in result.items()}
         return result
 
 

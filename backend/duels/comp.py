@@ -56,6 +56,7 @@ def merge_queues(queues: list[list[Duel]]) -> list[Duel]:
     )
     return [duel for duel, percentage in sorted_duels]
 
+
 # Todo: fix balancing
 def _fix_disbalanced_pairs(duels: list[Duel]) -> list[Duel]:
     participants = {d.left for d in duels} | {d.right for d in duels}
@@ -74,7 +75,6 @@ def _fix_disbalanced_pairs(duels: list[Duel]) -> list[Duel]:
     ]
     if not disbalanced_participants:
         return duels
-
 
     result = duels[:]
     disbalanced_participants.sort()
