@@ -168,13 +168,16 @@ def _deliver_range_pairs(
     worksheet.autofit()
 
 
-def _deliver_all_groups(range_participants: dict[str, list[Participant]], excel_writer: pd.ExcelWriter):
+def _deliver_all_groups(
+    range_participants: dict[str, list[Participant]], excel_writer: pd.ExcelWriter
+):
     range_classes = {
         rng: {p.clazz for p in participants}
         for rng, participants in range_participants.items()
     }
     repeated_classes = [
-        c for c in Class.__members__.values()
+        c
+        for c in Class.__members__.values()
         if c in range_classes[Range.First] and c in range_classes[Range.Second]
     ]
     for clazz in repeated_classes:
