@@ -1,3 +1,5 @@
+import typing
+
 import pydantic
 
 import duels.model
@@ -6,6 +8,7 @@ import duels.model
 class ClassSetup(pydantic.BaseModel):
     participants: list[str]
     twice: bool
+    times: typing.Optional[int]
 
 
 class RangeSetup(pydantic.BaseModel):

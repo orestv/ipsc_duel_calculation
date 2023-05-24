@@ -6,13 +6,15 @@ from duels.model import Class, Participant, Duel
 NONCE = Participant("", Class.STANDARD)
 
 
-def generate_duels(participants: list[Participant], repeat: bool) -> list[Duel]:
+def generate_duels(participants: list[Participant], times: int) -> list[Duel]:
     if not participants:
         return list()
     participants = participants[:]
     # random.shuffle(participants)
     if len(participants) % 2 != 0:
-        participants.append(NONCE)
+        participants.insert(0, NONCE)
+        # participants = [participants[0]] + [NONCE] + participants[1:]
+        # participants.append(NONCE)
 
     top, bottom = (
         participants[: len(participants) // 2],
@@ -22,15 +24,16 @@ def generate_duels(participants: list[Participant], repeat: bool) -> list[Duel]:
     result = []
 
     for idx in range(len(participants) - 1):
-        tb = (top, bottom)
-        d = list(zip(top, bottom))
         duels = [Duel(t, b) for t, b in zip(top, bottom)]
         result = result + duels
-        top, bottom = _rotate(top, bottom)
+        top, bottom = _rotate_clockwise(top, bottom)
 
-    if repeat:
-        result = result + [d.swapped() for d in result]
-    else:
+    if times > 1:
+        current_result = result
+        for _ in range(times-1):
+            current_result = [d.swapped() for d in current_result]
+            result = result + current_result
+    elif times == 1:
         # for non-repeat tournaments make sure everyone has more or less equal number of duels
         # where they're to the left and to the right
         first_participant = participants[0]
@@ -42,6 +45,8 @@ def generate_duels(participants: list[Participant], repeat: bool) -> list[Duel]:
         for duel in swap_duels:
             idx = result.index(duel)
             result[idx] = duel.swapped()
+    else:
+        raise ValueError(f"Times must be 1 or 2, not {times}")
 
     result = [d for d in result if NONCE not in d]
 
@@ -98,9 +103,16 @@ def _fix_disbalanced_pairs(duels: list[Duel]) -> list[Duel]:
     return result
 
 
-def _rotate(
+def _rotate_clockwise(
     top: list[Participant], bottom: list[Participant]
 ) -> (list[Participant], list[Participant]):
     current = (top, bottom)
-    result = ([top[0]] + [bottom[0]] + top[1 : len(top) - 1], bottom[1:] + [top[-1]])
+    result = (
+        [top[0]] + [bottom[0]] + top[1 : len(top) - 1],
+        bottom[1:] + [top[-1]],
+    )
+    # result = (
+    #     [top[0]] + top[2:] + [bottom[-1]],
+    #     [top[1]] + bottom[:len(bottom)-1],
+    # )
     return result
