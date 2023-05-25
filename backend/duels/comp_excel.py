@@ -103,7 +103,7 @@ def _deliver_range_lists(
             [
                 {
                     "name": p.name,
-                    "class": _render_class_ua(p),
+                    "class": _render_class(p),
                 }
                 for p in participants
             ]
