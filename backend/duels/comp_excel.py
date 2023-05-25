@@ -31,7 +31,7 @@ def deliver_excel(duels: dict[Range, list[Duel]], path: str):
 
 
 def _get_participants_per_range(
-    duels: dict[Range, list[Duel]]
+        duels: dict[Range, list[Duel]]
 ) -> dict[str, list[Participant]]:
     result = {}
 
@@ -44,7 +44,7 @@ def _get_participants_per_range(
 
 
 def _deliver_participants(
-    participants: typing.Iterable[Participant], excel_writer: pd.ExcelWriter
+        participants: typing.Iterable[Participant], excel_writer: pd.ExcelWriter
 ):
     df = (
         pd.DataFrame(
@@ -94,9 +94,9 @@ def _deliver_participants(
 
 
 def _deliver_range_lists(
-    rng: Range,
-    participants: typing.Iterable[Participant],
-    excel_writer: pd.ExcelWriter,
+        rng: Range,
+        participants: typing.Iterable[Participant],
+        excel_writer: pd.ExcelWriter,
 ):
     df = (
         pd.DataFrame(
@@ -114,7 +114,7 @@ def _deliver_range_lists(
     df.index = df.index + 1
     # df = df[["No.", "class", "name"]]
 
-    sheet_name = f"Список Рубіж №{rng.value}"
+    sheet_name = _sheet_name_range_list(rng)
     header_text = f"Рубіж №{rng.value}"
     _add_sheet_header(excel_writer, header_text, sheet_name, 3)
 
@@ -129,7 +129,7 @@ def _deliver_range_lists(
 
 
 def _deliver_range_pairs(
-    range: Range, duels: typing.Iterable[Duel], excel_writer: pd.ExcelWriter
+        range: Range, duels: typing.Iterable[Duel], excel_writer: pd.ExcelWriter
 ):
     df = (
         pd.DataFrame(
@@ -169,7 +169,7 @@ def _deliver_range_pairs(
 
 
 def _deliver_all_groups(
-    range_participants: dict[str, list[Participant]], excel_writer: pd.ExcelWriter
+        range_participants: dict[str, list[Participant]], excel_writer: pd.ExcelWriter
 ):
     range_classes = {
         rng: {p.clazz for p in participants}
@@ -189,7 +189,7 @@ def _deliver_all_groups(
 
 
 def _deliver_groups(
-    group_1: list[Participant], group_2: list[Participant], excel_writer
+        group_1: list[Participant], group_2: list[Participant], excel_writer
 ):
     dataframes = [
         pd.DataFrame({"group": f"Група №{idx + 1}", "name": [p.name for p in queue]})
@@ -285,7 +285,7 @@ def _equalize_column_width_openpyxl(excel_writer):
 
 
 def deliver_sorted_pairs(
-    range_queues: dict[Range, list[Duel]], excel_writer: pd.ExcelWriter
+        range_queues: dict[Range, list[Duel]], excel_writer: pd.ExcelWriter
 ):
     for r, q in range_queues.items():
         # delays = get_participant_delays(q)
@@ -305,7 +305,7 @@ def deliver_sorted_pairs(
         df_delays = df[["left", "right"]]
         df_delays["n"] = df_delays.index + 1
 
-        sheet_name = f"Пари Рубіж {r.value} Сортовані"
+        sheet_name = _sheet_name_range_pairs(r)
         header_text = sheet_name
         _add_sheet_header(excel_writer, header_text, sheet_name, 6)
         df.to_excel(
@@ -318,3 +318,32 @@ def deliver_sorted_pairs(
         worksheet: xlsxwriter.worksheet.Worksheet = excel_writer.sheets[sheet_name]
         worksheet.autofit()
         worksheet.set_column("D:D", 25)
+
+        _deliver_range_results(r, q, excel_writer)
+
+
+def _deliver_range_results(r: Range, queue: list[Duel], writer: pd.ExcelWriter):
+    sheet_name = _sheet_name_range_results(r)
+    sheet: xlsxwriter.worksheet.Worksheet = writer.book.add_worksheet(sheet_name)
+    for row, duel in enumerate(queue):
+        sheet.write(
+            row + 1, 0,
+            f"{_render_class(duel.left)} {duel.left}"
+        )
+        sheet.write(
+            row + 1, 3,
+            f"{_render_class(duel.right)} {duel.right}"
+        )
+    sheet.autofit()
+
+
+def _sheet_name_range_pairs(r):
+    return f"Пари Рубіж {r.value} Сортовані"
+
+
+def _sheet_name_range_results(r):
+    return f"Пари Рубіж {r.value} Відомість"
+
+
+def _sheet_name_range_list(rng):
+    return f"Список Рубіж №{rng.value}"
