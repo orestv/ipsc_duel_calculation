@@ -77,7 +77,7 @@ function getRangeClasses(range: string): RangeSetupRequest {
 function getClassParticipants(range: string, clazz: string): ClassSetupRequest {
     const participants = getEnteredParticipantList(range, clazz);
     const twice = false;
-    return {participants, twice}
+    return {participants: participants, times: 1}
 }
 
 function getInputId(range: string, clazz: string): string {

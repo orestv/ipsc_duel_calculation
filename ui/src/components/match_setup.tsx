@@ -28,7 +28,7 @@ export default function MatchSetup(props: MatchSetupProps) {
   const ranges = []
   for (const range of RANGES) {
     const r = props.matchSetup.ranges[range];
-    const defaultSetup: ClassSetupRequest = {participants: [], twice: false}
+    const defaultSetup: ClassSetupRequest = {participants: [], times: 1}
     const classes = r ? r.classes : {}
     const classControls = []
     let participantCount = 0;

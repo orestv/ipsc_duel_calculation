@@ -69,7 +69,7 @@ function getMatchSetup(taValue: string): MatchSetupRequest {
       return {
         "clazz": clazz,
         "participants": classParticipants,
-        "twice": false,
+        "times": 1,
       }
     }
   )

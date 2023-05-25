@@ -29,11 +29,12 @@ export default function ClassSetup(props: ClassSetupProps) {
             participants: participants,
         })
     }
-    const twiceChangeHandler = function(e: React.ChangeEvent<HTMLInputElement>) {
-        const newChecked = e.target.checked
+    const timesChangeHandler = function(e: React.ChangeEvent<HTMLInputElement>) {
+        const newTimes = e.target.valueAsNumber
         props.onParticipantsChanged({
             ...props.classSetup,
-            twice: newChecked
+            times: newTimes
+            // twice: newChecked
         })
     }
 
@@ -46,17 +47,16 @@ export default function ClassSetup(props: ClassSetupProps) {
                     {classNames[props.className]}
                     <span className="badge badge-primary bg-secondary mx-2">{nonEmptyParticipants.length}</span>
                 </h2>
-
-                <div className="form-check form-switch">
-                    <input type="checkbox"
-                           role="switch"
-                           className="form-check-input"
-                           id="switchTwice"
-                           checked={props.classSetup.twice}
-                           onChange={twiceChangeHandler}
-                    />
-                    <label htmlFor="switchTwice" className="form-check-label">Двічі</label>
-                </div>
+                <label htmlFor="inputTimes">Кількість повторень</label>
+                <input
+                  id={"inputTimes"}
+                  type="number"
+                  className={"form-control my-2"}
+                  min={1}
+                  max={4}
+                  value={props.classSetup.times}
+                  onChange={timesChangeHandler}
+                />
 
                 <textarea
                     rows={8}

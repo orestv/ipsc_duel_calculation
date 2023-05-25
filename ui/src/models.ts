@@ -8,7 +8,7 @@ export interface RangeSetupRequest {
 
 export interface ClassSetupRequest {
   participants: string[];
-  twice: boolean;
+  times: number;
 }
 
 export interface Match {
@@ -33,20 +33,20 @@ export function EmptyMatchSetupRequest(): MatchSetupRequest {
     ranges: {
       "1": {
         classes: {
-          S: {participants: [], twice: false},
-          SL: {participants: [], twice: false},
-          SM: {participants: [], twice: false},
-          M: {participants: [], twice: false},
-          O: {participants: [], twice: false},
+          S: {participants: [], times: 1},
+          SL: {participants: [], times: 1},
+          SM: {participants: [], times: 1},
+          M: {participants: [], times: 1},
+          O: {participants: [], times: 1},
         }
       },
       "2": {
         classes: {
-          S: {participants: [], twice: false},
-          SL: {participants: [], twice: false},
-          SM: {participants: [], twice: false},
-          M: {participants: [], twice: false},
-          O: {participants: [], twice: false},
+          S: {participants: [], times: 1},
+          SL: {participants: [], times: 1},
+          SM: {participants: [], times: 1},
+          M: {participants: [], times: 1},
+          O: {participants: [], times: 1},
         }
       }
     }
