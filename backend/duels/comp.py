@@ -59,7 +59,22 @@ def merge_queues(queues: list[list[Duel]]) -> list[Duel]:
     sorted_duels = sorted(
         itertools.chain.from_iterable(percentages), key=operator.itemgetter(1)
     )
-    return [duel for duel, percentage in sorted_duels]
+    duels = [duel for duel, percentage in sorted_duels]
+    duels = _fix_duels_in_row(duels)
+    return duels
+
+
+def _fix_duels_in_row(duels: list[Duel]) -> list[Duel]:
+
+    for idx, (d1, d2) in enumerate(zip(duels[:-1], duels[1:])):
+        if {d1.left.name, d1.right.name} & {d2.left.name, d2.right.name}:
+            duels[idx-1], duels[idx] = duels[idx], duels[idx-1]
+
+    for idx, (d1, d2) in enumerate(zip(duels[:-1], duels[1:])):
+        if {d1.left.name, d1.right.name} & {d2.left.name, d2.right.name}:
+            print(d1, d2)
+
+    return duels
 
 
 # Todo: fix balancing
