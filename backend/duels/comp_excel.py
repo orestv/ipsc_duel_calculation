@@ -29,6 +29,7 @@ def deliver_excel(duels: dict[Range, list[Duel]], path: str):
     deliver_sorted_pairs(duels, writer)
     for rng in ranges:
         _deliver_range_results(rng, duels[rng], range_participants[rng], writer)
+    deliver_blank_sheet(writer.book)
 
     writer.close()
 
@@ -287,11 +288,32 @@ def _equalize_column_width_openpyxl(excel_writer):
             worksheet.column_dimensions[col].width = value + 2
 
 
+def deliver_blank_sheet(workbook: xlsxwriter.Workbook):
+    row_count = 45
+    sheet = workbook.add_worksheet("Фінальний бланк")
+    fmt = workbook.add_format({"bottom": 1, "right": 1, })
+    fmt_bold = workbook.add_format({"bottom": 1, "right": 5, })
+    for row in range(row_count):
+        sheet.write_number(row, 0, row+1, fmt_bold)
+        sheet.write_string(row, 1, " " * 64, fmt)
+        sheet.write_string(row, 2, " " * 12, fmt_bold)
+        sheet.write_string(row, 3, " " * 64, fmt)
+        sheet.write_string(row, 4, " " * 12, fmt_bold)
+    sheet.autofit()
+    # sheet.set_column("B:B", 45, fmt)
+
+
 def deliver_sorted_pairs(
     range_queues: dict[Range, list[Duel]], excel_writer: pd.ExcelWriter
 ):
     fmt = excel_writer.book.add_format(
         {"bottom": 1,}
+    )
+    fmt_right_border_bold = excel_writer.book.add_format(
+        {"bottom": 1, "right": 5, }
+    )
+    fmt_right_border = excel_writer.book.add_format(
+        {"bottom": 1, "right": 1, }
     )
     for r, q in range_queues.items():
         # delays = get_participant_delays(q)
@@ -321,10 +343,12 @@ def deliver_sorted_pairs(
         worksheet.set_column(
             "A:E", 1, fmt,
         )
+        worksheet.set_column("C:C", 1, fmt_right_border)
+        worksheet.set_column("E:E", 1, fmt_right_border)
         worksheet.autofit()
-        worksheet.set_column("D:D", 10, fmt)
-        worksheet.set_column("F:F", 10, fmt)
-        worksheet.set_column("A:A", 3, fmt)
+        worksheet.set_column("D:D", 10, fmt_right_border_bold)
+        worksheet.set_column("F:F", 10, fmt_right_border_bold)
+        worksheet.set_column("A:A", 4, fmt_right_border_bold)
 
 
 def _deliver_range_results(
