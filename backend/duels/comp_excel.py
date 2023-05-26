@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import itertools
+import pickle
 import typing
 
 import openpyxl
@@ -33,7 +34,7 @@ def deliver_excel(duels: dict[Range, list[Duel]], path: str):
 
 
 def _get_participants_per_range(
-        duels: dict[Range, list[Duel]]
+    duels: dict[Range, list[Duel]]
 ) -> dict[str, list[Participant]]:
     result = {}
 
@@ -46,7 +47,7 @@ def _get_participants_per_range(
 
 
 def _deliver_participants(
-        participants: typing.Iterable[Participant], excel_writer: pd.ExcelWriter
+    participants: typing.Iterable[Participant], excel_writer: pd.ExcelWriter
 ):
     df = (
         pd.DataFrame(
@@ -96,9 +97,9 @@ def _deliver_participants(
 
 
 def _deliver_range_lists(
-        rng: Range,
-        participants: typing.Iterable[Participant],
-        excel_writer: pd.ExcelWriter,
+    rng: Range,
+    participants: typing.Iterable[Participant],
+    excel_writer: pd.ExcelWriter,
 ):
     df = (
         pd.DataFrame(
@@ -131,7 +132,7 @@ def _deliver_range_lists(
 
 
 def _deliver_range_pairs(
-        range: Range, duels: typing.Iterable[Duel], excel_writer: pd.ExcelWriter
+    range: Range, duels: typing.Iterable[Duel], excel_writer: pd.ExcelWriter
 ):
     df = (
         pd.DataFrame(
@@ -171,7 +172,7 @@ def _deliver_range_pairs(
 
 
 def _deliver_all_groups(
-        range_participants: dict[str, list[Participant]], excel_writer: pd.ExcelWriter
+    range_participants: dict[str, list[Participant]], excel_writer: pd.ExcelWriter
 ):
     range_classes = {
         rng: {p.clazz for p in participants}
@@ -191,7 +192,7 @@ def _deliver_all_groups(
 
 
 def _deliver_groups(
-        group_1: list[Participant], group_2: list[Participant], excel_writer
+    group_1: list[Participant], group_2: list[Participant], excel_writer
 ):
     dataframes = [
         pd.DataFrame({"group": f"Група №{idx + 1}", "name": [p.name for p in queue]})
@@ -287,7 +288,7 @@ def _equalize_column_width_openpyxl(excel_writer):
 
 
 def deliver_sorted_pairs(
-        range_queues: dict[Range, list[Duel]], excel_writer: pd.ExcelWriter
+    range_queues: dict[Range, list[Duel]], excel_writer: pd.ExcelWriter
 ):
     for r, q in range_queues.items():
         # delays = get_participant_delays(q)
@@ -321,62 +322,201 @@ def deliver_sorted_pairs(
         worksheet.autofit()
         worksheet.set_column("D:D", 25)
 
-        # _deliver_range_results(r, q, excel_writer)
 
-
-def _deliver_range_results(r: Range, queue: list[Duel], participants: list[Participant], writer: pd.ExcelWriter):
-    sheet_name = _sheet_name_range_results(r)
+def _deliver_range_results(
+    r: Range, queue: list[Duel], participants: list[Participant], writer: pd.ExcelWriter
+):
     book: xlsxwriter.Workbook = writer.book
-    result_sheet = book.add_worksheet(sheet_name)
-    validation_rule = {
-        'validate': 'integer',
-        'criteria': 'between',
-        'minimum': 0,
-        'maximum': 1,
-        'input_title': 'Введіть 1 або 0',
-        'input_message': '1 значить "перемога", 0 — "поразка"',
-    }
-    for row, duel in enumerate(queue):
-        result_sheet.write(
-            row + 1, 0,
-            f"{_render_class(duel.left)} {duel.left}"
-        )
-        result_sheet.write(
-            row + 1, 3,
-            f"{_render_class(duel.right)} {duel.right}"
-        )
-    result_sheet.data_validation(1, 1, len(queue), 2, validation_rule)
+
+    w = ExcelWriter(queue, participants, book)
+    w.render_result_sheet(r)
 
 
-    participants = sorted(participants, key=lambda p: (p.clazz, p.name))
-    last_class = None
-    top_border_format = book.add_format()
-    top_border_format.set_top()
-    for row, p in enumerate(participants):
-        fmt = None
-        if p.clazz != last_class:
-            fmt = top_border_format
-        last_class = p.clazz
-        result_sheet.write(
-            row + 1, 6,
-            f"{_render_class(p)} {p}",
-            fmt
-        )
-        result_sheet.write_formula(
-            row+1, 7,
-            f"""=SUMIF(A:A, G{row+1}, B:B) + SUMIF(D:D, G{row+1}, C:C)""",
-            fmt
-        )
-    result_sheet.autofit()
+class ExcelWriter:
+    duels: list[Duel]
+    participants: list[Participant]
+    book: xlsxwriter.Workbook
 
-    # range_list_sheet: xlsxwriter.worksheet.Worksheet = book.get_worksheet_by_name(_sheet_name_range_list(r))
-    # for row in range(1, 25):
-    #     col = 3
-    #     range_list_sheet.write_formula(
-    #         row, col,
-    #         f"""=SUMIF('{sheet_name}'!A2:A, C{row+1}&" "&B{row+1}, '{sheet_name}'!B2:B)"""
-    #         # f"""=C{row+1}&" "&B{row+1}""",
-    #     )
+    def __init__(
+        self,
+        duels: list[Duel],
+        participants: list[Participant],
+        book: xlsxwriter.Workbook,
+    ):
+        self.duels = duels
+        self.participants = participants
+        self.book = book
+        self.fmt_header = self.book.add_format(
+            {"bold": 1, "align": "center", "bottom": 1}
+        )
+        self.fmt_class_header = self.book.add_format(
+            {
+                "bold": 1,
+                "align": "center",
+                "valign": "vcenter",
+                "top": 1,
+            }
+        )
+        self.fmt_top_in_class = self.book.add_format(
+            {"bg_color": "#C6EFCE", "font_color": "#006100"}
+        )
+
+    def render_result_sheet(self, rng: Range):
+        sheet = self.book.add_worksheet(_sheet_name_range_results(rng))
+        self._write_duels(sheet)
+        self._write_participants(sheet)
+        sheet.autofit()
+
+    def _write_duels(self, sheet: xlsxwriter.worksheet.Worksheet):
+        sheet.write(
+            0, self._col_duel_participant(True), "Стрілець зліва", self.fmt_header
+        )
+        sheet.write(0, self._col_duel_result(True), "Перемога зліва", self.fmt_header)
+        sheet.write(0, self._col_duel_result(False), "Перемога справа", self.fmt_header)
+        sheet.write(
+            0, self._col_duel_participant(False), "Стрілець справа", self.fmt_header
+        )
+
+        row_first, row_last = self._rows_duels()
+        rows = range(row_first, row_last)
+        for row, duel in zip(rows, self.duels):
+            sheet.write(
+                row,
+                self._col_duel_participant(True),
+                self._render_participant(duel.left),
+            )
+            sheet.write(
+                row,
+                self._col_duel_participant(False),
+                self._render_participant(duel.right),
+            )
+
+        validation_rule = {
+            "validate": "integer",
+            "criteria": "between",
+            "minimum": 0,
+            "maximum": 1,
+            "input_title": "Введіть 1 або 0",
+            "input_message": '1 значить "перемога", 0 — "поразка"',
+        }
+        sheet.data_validation(
+            row_first,
+            self._col_duel_result(True),
+            row_last,
+            self._col_duel_result(False),
+            validation_rule,
+        )
+
+    def _write_participants(self, sheet: xlsxwriter.worksheet.Worksheet):
+        sheet.write(
+            0,
+            self._col_participant_class(),
+            "Клас",
+            self.fmt_header,
+        )
+        sheet.write(
+            0,
+            self._col_participant(),
+            "Стрілець",
+            self.fmt_header,
+        )
+        sheet.write(
+            0,
+            self._col_victory_count(),
+            "Перемог",
+            self.fmt_header,
+        )
+        row_start, row_end = self._rows_participants()
+        rows = range(row_start, row_end)
+        participants = sorted(self.participants, key=lambda p: (p.clazz, p.name))
+        fmt_class_start = self.book.add_format(
+            {
+                "top": 1,
+            }
+        )
+        for row, p in zip(rows, participants):
+            fmt = None
+            class_start_row, _ = self._rows_participant_class(p.clazz)
+            if row == class_start_row:
+                fmt = fmt_class_start
+            sheet.write(row, self._col_participant(), self._render_participant(p), fmt)
+            address = f"INDIRECT(ADDRESS({row+1}, {self._col_participant()+1}))"
+            sheet.write(
+                row,
+                self._col_victory_count(),
+                f"""=SUMIF(A:A, {address}, B:B) + SUMIF(D:D, {address}, C:C)""",
+                fmt,
+            )
+
+        for clazz in self._classes():
+            row_start, row_end = self._rows_participant_class(clazz)
+            row_end -= 1
+            sheet.merge_range(
+                row_start,
+                self._col_participant_class(),
+                row_end,
+                self._col_participant_class(),
+                clazz,
+                self.fmt_class_header,
+            )
+            sheet.conditional_format(
+                row_start, self._col_victory_count(),
+                row_end, self._col_victory_count(),
+                {
+                    "type": "top",
+                    "value": 4,
+                    "format": self.fmt_top_in_class,
+                }
+            )
+
+    def _render_participant(self, p: Participant) -> str:
+        return f"{p.name} {p.clazz}"
+
+    def _participant_count(self) -> int:
+        return len(self.participants)
+
+    def _duel_count(self) -> int:
+        return len(self.duels)
+
+    def _classes(self) -> typing.Iterable[Class]:
+        return sorted({p.clazz for p in self.participants})
+
+    def _rows_duels(self) -> (int, int):
+        return 1, self._duel_count() + 1
+
+    def _rows_participants(self) -> (int, int):
+        return 1, self._participant_count() + 1
+
+    def _col_duel_participant(self, left: bool) -> int:
+        if left:
+            return 0
+        return 3
+
+    def _col_duel_result(self, left: bool) -> int:
+        if left:
+            return 1
+        return 2
+
+    def _col_participant_class(self) -> int:
+        return 6
+
+    def _col_participant(self) -> int:
+        return 7
+
+    def _col_victory_count(self) -> int:
+        return 8
+
+    def _rows_participant_class(self, clazz: Class) -> (int, int):
+        start = None
+        for row, p in enumerate(
+            sorted(self.participants, key=lambda p: (p.clazz, p.name))
+        ):
+            row = row + 1  # account for header
+            if not start and p.clazz == clazz:
+                start = row
+            if start and p.clazz != clazz:
+                return start, row
+        return start, len(self.participants) + 1
 
 
 def _sheet_name_range_pairs(r):
@@ -389,3 +529,17 @@ def _sheet_name_range_results(r):
 
 def _sheet_name_range_list(rng):
     return f"Список Рубіж №{rng.value}"
+
+
+def main():
+    with open("duels.pickle", "rb") as f:
+        duels = pickle.load(f)
+    path = "out.xlsx"
+    deliver_excel(duels, path)
+    from subprocess import call
+
+    call(["open", path])
+
+
+if __name__ == "__main__":
+    main()

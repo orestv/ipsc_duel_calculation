@@ -30,7 +30,7 @@ def generate_duels(participants: list[Participant], times: int) -> list[Duel]:
 
     if times > 1:
         current_result = result
-        for _ in range(times-1):
+        for _ in range(times - 1):
             current_result = [d.swapped() for d in current_result]
             result = result + current_result
     elif times == 1:
