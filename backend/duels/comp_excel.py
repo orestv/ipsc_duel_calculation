@@ -486,7 +486,7 @@ class ExcelWriter:
             )
 
     def _render_participant(self, p: Participant) -> str:
-        return f"{p.name} {p.clazz}"
+        return f"{p.name} {_render_class(p)}"
 
     def _participant_count(self) -> int:
         return len(self.participants)
