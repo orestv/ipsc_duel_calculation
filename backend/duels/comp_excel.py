@@ -290,6 +290,9 @@ def _equalize_column_width_openpyxl(excel_writer):
 def deliver_sorted_pairs(
     range_queues: dict[Range, list[Duel]], excel_writer: pd.ExcelWriter
 ):
+    fmt = excel_writer.book.add_format(
+        {"bottom": 1,}
+    )
     for r, q in range_queues.items():
         # delays = get_participant_delays(q)
         q_items = [
@@ -299,14 +302,10 @@ def deliver_sorted_pairs(
                 "left": duel.left.name,
                 "_": " " * 16,
                 "right": duel.right.name,
-                "__": " " * 16,
             }
             for idx, duel in enumerate(q)
         ]
         df = pd.DataFrame(q_items)
-
-        df_delays = df[["left", "right"]]
-        df_delays["n"] = df_delays.index + 1
 
         sheet_name = _sheet_name_range_pairs(r)
         header_text = sheet_name
@@ -319,8 +318,13 @@ def deliver_sorted_pairs(
             startrow=1,
         )
         worksheet: xlsxwriter.worksheet.Worksheet = excel_writer.sheets[sheet_name]
+        worksheet.set_column(
+            "A:E", 1, fmt,
+        )
         worksheet.autofit()
-        worksheet.set_column("D:D", 25)
+        worksheet.set_column("D:D", 10, fmt)
+        worksheet.set_column("F:F", 10, fmt)
+        worksheet.set_column("A:A", 3, fmt)
 
 
 def _deliver_range_results(
