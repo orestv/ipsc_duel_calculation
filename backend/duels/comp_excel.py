@@ -26,6 +26,8 @@ def deliver_excel(duels: dict[Range, list[Duel]], path: str):
     for rng in ranges:
         _deliver_range_pairs(rng, duels[rng], writer)
     deliver_sorted_pairs(duels, writer)
+    for rng in ranges:
+        _deliver_range_results(rng, duels[rng], range_participants[rng], writer)
 
     writer.close()
 
@@ -319,22 +321,62 @@ def deliver_sorted_pairs(
         worksheet.autofit()
         worksheet.set_column("D:D", 25)
 
-        _deliver_range_results(r, q, excel_writer)
+        # _deliver_range_results(r, q, excel_writer)
 
 
-def _deliver_range_results(r: Range, queue: list[Duel], writer: pd.ExcelWriter):
+def _deliver_range_results(r: Range, queue: list[Duel], participants: list[Participant], writer: pd.ExcelWriter):
     sheet_name = _sheet_name_range_results(r)
-    sheet: xlsxwriter.worksheet.Worksheet = writer.book.add_worksheet(sheet_name)
+    book: xlsxwriter.Workbook = writer.book
+    result_sheet = book.add_worksheet(sheet_name)
+    validation_rule = {
+        'validate': 'integer',
+        'criteria': 'between',
+        'minimum': 0,
+        'maximum': 1,
+        'input_title': 'Введіть 1 або 0',
+        'input_message': '1 значить "перемога", 0 — "поразка"',
+    }
     for row, duel in enumerate(queue):
-        sheet.write(
+        result_sheet.write(
             row + 1, 0,
             f"{_render_class(duel.left)} {duel.left}"
         )
-        sheet.write(
+        result_sheet.write(
             row + 1, 3,
             f"{_render_class(duel.right)} {duel.right}"
         )
-    sheet.autofit()
+    result_sheet.data_validation(1, 1, len(queue), 2, validation_rule)
+
+
+    participants = sorted(participants, key=lambda p: (p.clazz, p.name))
+    last_class = None
+    top_border_format = book.add_format()
+    top_border_format.set_top()
+    for row, p in enumerate(participants):
+        fmt = None
+        if p.clazz != last_class:
+            fmt = top_border_format
+        last_class = p.clazz
+        result_sheet.write(
+            row + 1, 6,
+            f"{_render_class(p)} {p}",
+            fmt
+        )
+        result_sheet.write_formula(
+            row+1, 7,
+            f"""=SUMIF(A:A, G{row+1}, B:B) + SUMIF(D:D, G{row+1}, C:C)""",
+            fmt
+        )
+    result_sheet.autofit()
+
+    # range_list_sheet: xlsxwriter.worksheet.Worksheet = book.get_worksheet_by_name(_sheet_name_range_list(r))
+    # for row in range(1, 25):
+    #     col = 3
+    #     range_list_sheet.write_formula(
+    #         row, col,
+    #         f"""=SUMIF('{sheet_name}'!A2:A, C{row+1}&" "&B{row+1}, '{sheet_name}'!B2:B)"""
+    #         # f"""=C{row+1}&" "&B{row+1}""",
+    #     )
 
 
 def _sheet_name_range_pairs(r):
