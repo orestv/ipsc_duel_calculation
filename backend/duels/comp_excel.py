@@ -347,7 +347,7 @@ class ExcelWriter:
         self.participants = participants
         self.book = book
         self.fmt_header = self.book.add_format(
-            {"bold": 1, "align": "center", "bottom": 1}
+            {"bold": 1, "align": "center", "bottom": 1, "text_wrap": True,}
         )
         self.fmt_class_header = self.book.add_format(
             {
@@ -360,6 +360,14 @@ class ExcelWriter:
         self.fmt_top_in_class = self.book.add_format(
             {"bg_color": "#C6EFCE", "font_color": "#006100"}
         )
+        self.fmt_victory_record = self.book.add_format(
+            {"bold": 1, "align": "center",}
+        )
+        self.fmt_victory = self.book.add_format({
+            "bg_color": "#C6EFCE",
+            "bold": 1,
+            "align": "center",
+        })
 
     def render_result_sheet(self, rng: Range):
         sheet = self.book.add_worksheet(_sheet_name_range_results(rng))
@@ -371,8 +379,8 @@ class ExcelWriter:
         sheet.write(
             0, self._col_duel_participant(True), "Стрілець зліва", self.fmt_header
         )
-        sheet.write(0, self._col_duel_result(True), "Перемога зліва", self.fmt_header)
-        sheet.write(0, self._col_duel_result(False), "Перемога справа", self.fmt_header)
+        sheet.write(0, self._col_duel_result(True), "Перемога\nзліва", self.fmt_header)
+        sheet.write(0, self._col_duel_result(False), "Перемога\nсправа", self.fmt_header)
         sheet.write(
             0, self._col_duel_participant(False), "Стрілець справа", self.fmt_header
         )
@@ -392,12 +400,8 @@ class ExcelWriter:
             )
 
         validation_rule = {
-            "validate": "integer",
-            "criteria": "between",
-            "minimum": 0,
-            "maximum": 1,
-            "input_title": "Введіть 1 або 0",
-            "input_message": '1 значить "перемога", 0 — "поразка"',
+            "validate": "list",
+            "source": [0, 1],
         }
         sheet.data_validation(
             row_first,
@@ -405,6 +409,18 @@ class ExcelWriter:
             row_last,
             self._col_duel_result(False),
             validation_rule,
+        )
+        sheet.conditional_format(
+            row_first,
+            self._col_duel_result(True),
+            row_last,
+            self._col_duel_result(False),
+            {
+                "type": "cell",
+                "criteria": "equal to",
+                "value": 1,
+                "format": self.fmt_victory,
+            }
         )
 
     def _write_participants(self, sheet: xlsxwriter.worksheet.Worksheet):
