@@ -23,8 +23,14 @@ def generate_duels(participants: list[Participant], times: int) -> list[Duel]:
 
     result = []
 
+    swap_left_right = False
     for idx in range(len(participants) - 1):
         duels = [Duel(t, b) for t, b in zip(top, bottom)]
+
+        if swap_left_right:
+            duels = [d.swapped() for d in duels]
+        swap_left_right = not swap_left_right
+
         result = result + duels
         top, bottom = _rotate_clockwise(top, bottom)
 
