@@ -74,7 +74,7 @@ def _fix_duels_in_row(duels: list[Duel]) -> list[Duel]:
 
     for idx, (d1, d2) in enumerate(zip(duels[:-1], duels[1:])):
         if {d1.left.name, d1.right.name} & {d2.left.name, d2.right.name}:
-            duels[idx-1], duels[idx] = duels[idx], duels[idx-1]
+            duels[idx - 1], duels[idx] = duels[idx], duels[idx - 1]
 
     for idx, (d1, d2) in enumerate(zip(duels[:-1], duels[1:])):
         if {d1.left.name, d1.right.name} & {d2.left.name, d2.right.name}:

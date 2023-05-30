@@ -24,12 +24,12 @@ def deliver_excel(duels: dict[Range, list[Duel]], path: str):
 
     _deliver_all_groups(range_participants, writer)
 
-    for rng in ranges:
-        _deliver_range_pairs(rng, duels[rng], writer)
     deliver_sorted_pairs(duels, writer)
     for rng in ranges:
         _deliver_range_results(rng, duels[rng], range_participants[rng], writer)
-    deliver_blank_sheet(writer.book)
+
+    for clazz in Class.__members__.values():
+        deliver_blank_sheet(clazz, writer.book)
 
     writer.close()
 
@@ -231,16 +231,18 @@ def _render_class(p: Participant) -> str:
         return "SL"
 
 
-def _render_class_ua(p: Participant) -> str:
-    if p.clazz == Class.STANDARD_MANUAL:
+def _render_class_ua(p: Participant | Class) -> str:
+    if isinstance(p, Participant):
+        p = p.clazz
+    if p == Class.STANDARD_MANUAL:
         return "Стандарт-Мануал"
-    elif p.clazz == Class.OPEN:
+    elif p == Class.OPEN:
         return "Відкритий"
-    elif p.clazz == Class.MODIFIED:
+    elif p == Class.MODIFIED:
         return "Тактика"
-    elif p.clazz == Class.STANDARD:
+    elif p == Class.STANDARD:
         return "Стандарт"
-    elif p.clazz == Class.STANDARD_LADY:
+    elif p == Class.STANDARD_LADY:
         return "Стандарт Леді"
 
 
@@ -252,6 +254,8 @@ def _add_sheet_header(excel_writer, header_text, sheet_name, width: int):
         {
             "bold": True,
             "align": "center",
+            "font_size": 16,
+            "bottom": 1,
         }
     )
     worksheet.merge_range(0, 0, 0, width - 1, header_text, header_format)
@@ -288,32 +292,93 @@ def _equalize_column_width_openpyxl(excel_writer):
             worksheet.column_dimensions[col].width = value + 2
 
 
-def deliver_blank_sheet(workbook: xlsxwriter.Workbook):
-    row_count = 45
-    sheet = workbook.add_worksheet("Фінальний бланк")
-    fmt = workbook.add_format({"bottom": 1, "right": 1, })
-    fmt_bold = workbook.add_format({"bottom": 1, "right": 5, })
-    for row in range(row_count):
-        sheet.write_number(row, 0, row+1, fmt_bold)
-        sheet.write_string(row, 1, " " * 64, fmt)
-        sheet.write_string(row, 2, " " * 12, fmt_bold)
-        sheet.write_string(row, 3, " " * 64, fmt)
-        sheet.write_string(row, 4, " " * 12, fmt_bold)
-    sheet.autofit()
-    # sheet.set_column("B:B", 45, fmt)
+def deliver_blank_sheet(clazz: Class, workbook: xlsxwriter.Workbook):
+    fmt = workbook.add_format(
+        {
+            "bottom": 1,
+            "right": 1,
+        }
+    )
+    fmt_bold = workbook.add_format(
+        {
+            "bottom": 1,
+            "right": 5,
+        }
+    )
+    fmt_header = workbook.add_format(
+        {
+            "bold": True,
+            "align": "center",
+            "font_size": 16,
+            "bottom": 1,
+        }
+    )
+    sheets = [
+        (
+            "Вихід з групи",
+            [
+                ("Вихід з групи", 25),
+            ],
+        ),
+        (
+            "Фінали",
+            [
+                ("Півфінал", 15),
+                ("Третє місце", 6),
+                ("Фінал", 6),
+            ],
+        ),
+    ]
+    header_width = 5
+
+    for sheet_title, subheaders in sheets:
+        sheet = workbook.add_worksheet(f"{_render_class_ua(clazz)} {sheet_title}")
+        current_row = 0
+        for subheader, row_count in subheaders:
+            sheet.merge_range(
+                current_row,
+                0,
+                current_row,
+                header_width - 1,
+                f"{_render_class_ua(clazz)} — {subheader}",
+                fmt_header,
+            )
+            current_row += 1
+
+            for row in range(row_count):
+                table_row = current_row + row
+                sheet.write_number(table_row, 0, row + 1, fmt_bold)
+                sheet.write_string(table_row, 1, " " * 64, fmt)
+                sheet.write_string(table_row, 2, " " * 12, fmt_bold)
+                sheet.write_string(table_row, 3, " " * 64, fmt)
+                sheet.write_string(table_row, 4, " " * 12, fmt_bold)
+
+            current_row += row_count
+        sheet.autofit()
+        sheet.set_column("B:B", 30, fmt)
+        sheet.set_column("D:D", 30, fmt)
+        sheet.set_column("A:A", 4, fmt)
 
 
 def deliver_sorted_pairs(
     range_queues: dict[Range, list[Duel]], excel_writer: pd.ExcelWriter
 ):
     fmt = excel_writer.book.add_format(
-        {"bottom": 1,}
+        {
+            "bottom": 1,
+        }
     )
     fmt_right_border_bold = excel_writer.book.add_format(
-        {"bottom": 1, "right": 5, }
+        {
+            "bottom": 1,
+            "right": 5,
+        }
     )
     fmt_right_border = excel_writer.book.add_format(
-        {"bottom": 1, "right": 1, }
+        {
+            "bottom": 1,
+            "right": 1,
+        }
     )
     for r, q in range_queues.items():
         # delays = get_participant_delays(q)
@@ -341,7 +406,9 @@ def deliver_sorted_pairs(
         )
         worksheet: xlsxwriter.worksheet.Worksheet = excel_writer.sheets[sheet_name]
         worksheet.set_column(
-            "A:E", 1, fmt,
+            "A:E",
+            1,
+            fmt,
         )
         worksheet.set_column("C:C", 1, fmt_right_border)
         worksheet.set_column("E:E", 1, fmt_right_border)
@@ -375,7 +442,12 @@ class ExcelWriter:
         self.participants = participants
         self.book = book
         self.fmt_header = self.book.add_format(
-            {"bold": 1, "align": "center", "bottom": 1, "text_wrap": True,}
+            {
+                "bold": 1,
+                "align": "center",
+                "bottom": 1,
+                "text_wrap": True,
+            }
         )
         self.fmt_class_header = self.book.add_format(
             {
@@ -389,13 +461,18 @@ class ExcelWriter:
             {"bg_color": "#C6EFCE", "font_color": "#006100"}
         )
         self.fmt_victory_record = self.book.add_format(
-            {"bold": 1, "align": "center",}
+            {
+                "bold": 1,
+                "align": "center",
+            }
         )
-        self.fmt_victory = self.book.add_format({
-            "bg_color": "#C6EFCE",
-            "bold": 1,
-            "align": "center",
-        })
+        self.fmt_victory = self.book.add_format(
+            {
+                "bg_color": "#C6EFCE",
+                "bold": 1,
+                "align": "center",
+            }
+        )
 
     def render_result_sheet(self, rng: Range):
         sheet = self.book.add_worksheet(_sheet_name_range_results(rng))
@@ -408,7 +485,9 @@ class ExcelWriter:
             0, self._col_duel_participant(True), "Стрілець зліва", self.fmt_header
         )
         sheet.write(0, self._col_duel_result(True), "Перемога\nзліва", self.fmt_header)
-        sheet.write(0, self._col_duel_result(False), "Перемога\nсправа", self.fmt_header)
+        sheet.write(
+            0, self._col_duel_result(False), "Перемога\nсправа", self.fmt_header
+        )
         sheet.write(
             0, self._col_duel_participant(False), "Стрілець справа", self.fmt_header
         )
@@ -448,7 +527,7 @@ class ExcelWriter:
                 "criteria": "equal to",
                 "value": 1,
                 "format": self.fmt_victory,
-            }
+            },
         )
 
     def _write_participants(self, sheet: xlsxwriter.worksheet.Worksheet):
@@ -504,13 +583,15 @@ class ExcelWriter:
                 self.fmt_class_header,
             )
             sheet.conditional_format(
-                row_start, self._col_victory_count(),
-                row_end, self._col_victory_count(),
+                row_start,
+                self._col_victory_count(),
+                row_end,
+                self._col_victory_count(),
                 {
                     "type": "top",
                     "value": 4,
                     "format": self.fmt_top_in_class,
-                }
+                },
             )
 
     def _render_participant(self, p: Participant) -> str:
@@ -564,7 +645,7 @@ class ExcelWriter:
 
 
 def _sheet_name_range_pairs(r):
-    return f"Пари Рубіж {r.value} Сортовані"
+    return f"Пари — Рубіж №{r.value}"
 
 
 def _sheet_name_range_results(r):
