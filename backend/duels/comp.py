@@ -12,11 +12,10 @@ def generate_duels(participants: list[Participant], times: int) -> list[Duel]:
     if times < 1:
         raise ValueError("The Times parameter must be >= 1.")
     participants = participants[:]
-    # random.shuffle(participants)
+
+    # See: Circle Method at https://en.wikipedia.org/wiki/Round-robin_tournament
     if len(participants) % 2 != 0:
         participants.insert(0, NONCE)
-        # participants = [participants[0]] + [NONCE] + participants[1:]
-        # participants.append(NONCE)
 
     top, bottom = (
         participants[: len(participants) // 2],
@@ -29,6 +28,10 @@ def generate_duels(participants: list[Participant], times: int) -> list[Duel]:
     for idx in range(len(participants) - 1):
         duels = [Duel(t, b) for t, b in zip(top, bottom)]
 
+        # In the Circle method, every participant will compete many times in a row
+        # on the same duel side.
+        # This piece swaps the sides every other time so that the participants switch
+        # side every other duel.
         if swap_left_right:
             duels = [d.swapped() for d in duels]
         swap_left_right = not swap_left_right
@@ -36,6 +39,9 @@ def generate_duels(participants: list[Participant], times: int) -> list[Duel]:
         result = result + duels
         top, bottom = _rotate_clockwise(top, bottom)
 
+    # Duplicate the tournament schedule as needed,
+    # swapping the left/right pairs every time
+    # to make sure everyone plays left/right more or less the same number of times.
     if times > 1:
         current_result = result
         for _ in range(times - 1):
@@ -44,12 +50,21 @@ def generate_duels(participants: list[Participant], times: int) -> list[Duel]:
 
     result = [d for d in result if NONCE not in d]
 
-    # result = _fix_disbalanced_pairs(result)
     return result
 
 
 def merge_queues(queues: list[list[Duel]]) -> list[Duel]:
+    """Combine duel lists from multiple classes into a single queue.
+
+    Ensures that the classes are merged more or less equally so that
+    no class has all its duels in the beginning on in the end.
+    """
+
+    # how many duels in the class have already competed for each duel?
     percentages = [[(duel, idx / len(q)) for idx, duel in enumerate(q)] for q in queues]
+
+    # merge the class queues so that all the classes
+    # progress more or less equally fast.
     sorted_duels = sorted(
         itertools.chain.from_iterable(percentages), key=operator.itemgetter(1)
     )
@@ -59,6 +74,7 @@ def merge_queues(queues: list[list[Duel]]) -> list[Duel]:
 
 
 def _fix_duels_in_row(duels: list[Duel]) -> list[Duel]:
+    """Ensure that no participants have two duels in a row."""
 
     for idx, (d1, d2) in enumerate(zip(duels[:-1], duels[1:])):
         if {d1.left.name, d1.right.name} & {d2.left.name, d2.right.name}:
@@ -71,57 +87,22 @@ def _fix_duels_in_row(duels: list[Duel]) -> list[Duel]:
     return duels
 
 
-# Todo: fix balancing
-def _fix_disbalanced_pairs(duels: list[Duel]) -> list[Duel]:
-    participants = {d.left for d in duels} | {d.right for d in duels}
-    participants_leftright = []
-    # Calculate number of left/right occurrences for each participant
-    for p in participants:
-        count_left = len([d for d in duels if d.left == p])
-        count_right = len([d for d in duels if d.right == p])
-        participants_leftright.append((count_left, count_right, p))
-
-    # Find participants who have 2+ difference between their left and right duel sides
-    disbalanced_participants = [
-        (count_left, count_right, p)
-        for count_left, count_right, p in participants_leftright
-        if abs(count_left - count_right) > 1
-    ]
-    if not disbalanced_participants:
-        return duels
-
-    result = duels[:]
-    disbalanced_participants.sort()
-    half_length = len(disbalanced_participants) // 2
-    db_left, db_right = (
-        disbalanced_participants[:half_length],
-        disbalanced_participants[half_length:],
-    )
-    for left, right in zip(db_left, db_right):
-        pleft = left[2]
-        pright = right[2]
-
-        old_duel = Duel(pright, pleft)
-        new_duel = Duel(pleft, pright)
-        try:
-            idx = result.index(old_duel)
-            result[idx] = new_duel
-        except ValueError:
-            continue
-
-    return result
-
-
 def _rotate_clockwise(
     top: list[Participant], bottom: list[Participant]
 ) -> (list[Participant], list[Participant]):
-    current = (top, bottom)
+    """Fix the first item in place,
+    rotate the rest clockwise.
+
+    Convert:
+      0 1 2 3
+      4 5 6 7
+    into
+      0 4 1 2
+      5 6 7 3
+
+    See: Circle Method at https://en.wikipedia.org/wiki/Round-robin_tournament"""
     result = (
         [top[0]] + [bottom[0]] + top[1 : len(top) - 1],
         bottom[1:] + [top[-1]],
     )
-    # result = (
-    #     [top[0]] + top[2:] + [bottom[-1]],
-    #     [top[1]] + bottom[:len(bottom)-1],
-    # )
     return result

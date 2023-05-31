@@ -3,15 +3,14 @@ import tempfile
 
 import litestar
 import litestar.exceptions
-from litestar.config.cors import CORSConfig
 from litestar.response_containers import File
 
 import duels
-import duels.model
 import duels.comp
 import duels.comp_excel
-from . import comp_excel
+import duels.model
 from duels.api_models import MatchSetup, Participant, Duel, Duels, ClassSetup
+from . import comp_excel
 
 
 class DuelsController(litestar.Controller):
