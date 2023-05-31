@@ -1,19 +1,5 @@
-# Duel Calculator
+# Генератор відомостей дуельних матчів ССК "Практика".
 
-# Flow
+Генерує дуельки. Enough said.
 
-- Get the list of participants from practicarms.ua
-- Parse them into classes
-- Submit the lists of participants
-- Get the visualized list of duels with counts, etc
-- Get the list of duels excel
-
-## Input
-
-Range, clazz, participant list.
-
-## Output
-
-Range, duel list (participants, clazz).
-
-# Backend
+Онлайн-версія генератора на https://duelant.win.
