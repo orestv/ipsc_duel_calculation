@@ -5,14 +5,12 @@ name = "pypi"
 
 [packages]
 faker = "*"
-pandas = "*"
-matplotlib = "*"
 openpyxl = "*"
-plotly = "*"
 litestar = "*"
 uvicorn = "*"
 pydantic = "*"
 xlsxwriter = "*"
+pandas = "*"
 
 [dev-packages]
 
