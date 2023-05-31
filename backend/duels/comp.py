@@ -9,6 +9,8 @@ NONCE = Participant("", Class.STANDARD)
 def generate_duels(participants: list[Participant], times: int) -> list[Duel]:
     if not participants:
         return list()
+    if times < 1:
+        raise ValueError("The Times parameter must be >= 1.")
     participants = participants[:]
     # random.shuffle(participants)
     if len(participants) % 2 != 0:
@@ -39,24 +41,10 @@ def generate_duels(participants: list[Participant], times: int) -> list[Duel]:
         for _ in range(times - 1):
             current_result = [d.swapped() for d in current_result]
             result = result + current_result
-    # elif times == 1:
-    #     # for non-repeat tournaments make sure everyone has more or less equal number of duels
-    #     # where they're to the left and to the right
-    #     first_participant = participants[0]
-    #     first_participant_duels = [d for d in result if first_participant in d]
-    #     remaining_duels, swap_duels = (
-    #         first_participant_duels[::2],
-    #         first_participant_duels[1::2],
-    #     )
-    #     for duel in swap_duels:
-    #         idx = result.index(duel)
-    #         result[idx] = duel.swapped()
-    # else:
-    #     raise ValueError(f"Times must be 1 or 2, not {times}")
 
     result = [d for d in result if NONCE not in d]
 
-    result = _fix_disbalanced_pairs(result)
+    # result = _fix_disbalanced_pairs(result)
     return result
 
 
