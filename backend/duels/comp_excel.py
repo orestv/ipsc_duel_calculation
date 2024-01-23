@@ -110,7 +110,8 @@ def _deliver_range_lists(
                     "class": _render_class(p),
                 }
                 for p in participants
-            ]
+            ],
+            columns=['class', 'name'],
         )
         .sort_values(["class", "name"])
         .reset_index(drop=True)
