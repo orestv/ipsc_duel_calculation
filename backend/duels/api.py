@@ -3,13 +3,13 @@ import tempfile
 
 import litestar
 import litestar.exceptions
-from litestar.response_containers import File
+from litestar.response import File
 
 import duels
 import duels.comp
 import duels.comp_excel
 import duels.model
-from duels.api_models import MatchSetup, Participant, Duel, Duels, ClassSetup
+from duels.api_models import MatchSetup, Participant, Duel, Duels
 from . import comp_excel
 
 
@@ -47,13 +47,6 @@ class DuelsController(litestar.Controller):
         return File(path=path, filename="pairs.xlsx")
 
     def _generate_duels(self, match_setup: MatchSetup):
-        def times(cs: ClassSetup) -> int:
-            if cs.times:
-                return cs.times
-            if cs.twice:
-                return 2
-            return 1
-
         result = {
             rng: [
                 duels.comp.generate_duels(
@@ -61,7 +54,7 @@ class DuelsController(litestar.Controller):
                         duels.model.Participant(name, clazz)
                         for name in clazz_setup.participants
                     ],
-                    times(clazz_setup),
+                    clazz_setup.times,
                 )
                 for clazz, clazz_setup in range_setup.classes.items()
             ]

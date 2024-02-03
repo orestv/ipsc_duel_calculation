@@ -7,8 +7,7 @@ import duels.model
 
 class ClassSetup(pydantic.BaseModel):
     participants: list[str]
-    twice: typing.Optional[bool]
-    times: typing.Optional[int]
+    times: int
 
 
 class RangeSetup(pydantic.BaseModel):
