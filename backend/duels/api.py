@@ -1,16 +1,21 @@
 import logging
 import tempfile
+import uuid
 
 import litestar
 import litestar.exceptions
+from litestar.exceptions import NotFoundException
 from litestar.response import File
+from litestar.di import Provide
 
 import duels
 import duels.comp
 import duels.comp_excel
 import duels.model
-from duels.api_models import MatchSetup, Participant, Duel, Duels
+from duels.api_models import MatchSetup, Participant, Duel, Duels, MatchDuels
 from . import comp_excel
+from .inject import provide_match_repository
+from .repositories import MatchRepository
 
 
 class DuelsController(litestar.Controller):
@@ -64,6 +69,28 @@ class DuelsController(litestar.Controller):
         return result
 
 
+class MatchController(litestar.Controller):
+    path = "/matches"
+
+    @litestar.post(
+        dependencies={
+            "match_repository": Provide(provide_match_repository)
+        }
+    )
+    async def create_match(self, data: Duels, match_repository: MatchRepository) -> uuid.UUID:
+        return match_repository.create_match(data)
+
+    @litestar.get("/{match_id:uuid}",
+                  dependencies={"match_repository": Provide(provide_match_repository)}
+                  )
+    async def get_match(self, match_id: uuid.UUID, match_repository: MatchRepository) -> MatchDuels:
+        try:
+            result = match_repository.get_match(match_id)
+            return result
+        except KeyError:
+            raise NotFoundException()
+
+
 def logging_exception_handler(_: litestar.Request, exc: Exception) -> litestar.Response:
     logging.exception(exc)
     return litestar.Response(
@@ -74,7 +101,7 @@ def logging_exception_handler(_: litestar.Request, exc: Exception) -> litestar.R
 
 
 app = litestar.Litestar(
-    route_handlers=[DuelsController],
+    route_handlers=[DuelsController, MatchController],
     # cors_config=CORSConfig(allow_origins=["http://localhost:4000"]),
-    exception_handlers={Exception: logging_exception_handler},
+    # exception_handlers={Exception: logging_exception_handler},
 )

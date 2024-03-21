@@ -1,4 +1,6 @@
+import datetime
 import typing
+import uuid
 
 import pydantic
 
@@ -28,5 +30,29 @@ class Duel(pydantic.BaseModel):
     clazz: duels.model.Class
 
 
+class MatchDuel(Duel):
+    id: uuid.UUID
+
+
+class MatchDuels(pydantic.BaseModel):
+    ranges: dict[duels.model.Range, list[MatchDuel]]
+
+
 class Duels(pydantic.BaseModel):
     ranges: dict[duels.model.Range, list[Duel]]
+
+
+class OutcomeDQ(pydantic.BaseModel):
+    left: bool = False
+    right: bool = False
+
+
+class OutcomeVictory(pydantic.BaseModel):
+    left: bool = False
+    right: bool = False
+
+
+class DuelOutcome(pydantic.BaseModel):
+    duel: MatchDuel
+    dq: OutcomeDQ
+    created_at: typing.Optional[datetime.datetime]
