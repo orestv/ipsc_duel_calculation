@@ -1,6 +1,6 @@
 import {API_ROOT} from "../../storage";
 
-import {MatchInProgress, MatchOutcomes} from "./models";
+import {DuelOutcome, MatchInProgress, MatchOutcomes} from "./models";
 
 export async function fetchMatches(): Promise<MatchInProgress[]> {
     const response = await fetch(
@@ -37,10 +37,19 @@ export async function fetchMatchInProgress(matchId: string): Promise<MatchInProg
     return matchInProgress
 }
 
-async function fetchMatchOutcomes(matchId: string): Promise<MatchOutcomes> {
+export async function fetchMatchOutcomes(matchId: string): Promise<MatchOutcomes> {
     const response = await fetch(
         `${API_ROOT}/matches/${matchId}/outcomes`
     )
     const matchOutcomes = JSON.parse(await response.text())
     return matchOutcomes
+}
+
+export async function recordOutcome(matchId: string, outcome: DuelOutcome) {
+    await fetch(
+        `${API_ROOT}/matches/${matchId}/duels/${outcome.duel_id}/outcomes`, {
+            method: "POST",
+            body: JSON.stringify(outcome),
+        }
+    )
 }

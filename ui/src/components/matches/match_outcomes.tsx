@@ -1,11 +1,11 @@
 import React, {useEffect, useState} from "react";
 import {useLoaderData} from "react-router-dom";
-import {MatchInProgress, Participant} from "./models";
+import {MatchInProgress, MatchOutcomes, Participant} from "./models";
 import Navbar from "react-bootstrap/Navbar";
 import Container from "react-bootstrap/Container";
 import {Button, Row} from "react-bootstrap";
 import DuelList from "./duel_list";
-import {fetchMatchInProgress} from "./match_service";
+import {fetchMatchInProgress, fetchMatchOutcomes} from "./match_service";
 
 export async function loader({params}: any) {
     return <>
@@ -41,6 +41,23 @@ export function MatchReferee(params: MatchRefereeParams) {
         })()
     }, []);
 
+    const [outcomesUpdated, setOutcomesUpdated] = useState(true)
+    const defaultOutcomes = (): MatchOutcomes => {
+        return {outcomes: {}}
+    }
+    const [outcomes, setOutcomes] = useState(defaultOutcomes())
+
+    useEffect(() => {
+        (async () => {
+            setOutcomes(await fetchMatchOutcomes(params.matchId))
+            setOutcomesUpdated(true)
+        })()
+    }, [outcomesUpdated]);
+
+    const handleOutcomeRecorded = async () => {
+        setOutcomes(await fetchMatchOutcomes(params.matchId))
+    }
+
     const ranges = Object.keys(match.duels).map(Number)
     const [selectedRange, setSelectedRange] = useState(1)
     const rangeButtons = []
@@ -72,6 +89,7 @@ export function MatchReferee(params: MatchRefereeParams) {
                     range={selectedRange}
                     participants={getParticipantDictionary(match.participants)}
                     duels={match.duels[selectedRange] ?? []}
+                    onOutcomeRecorded={handleOutcomeRecorded}
                 />
             </Row>
         </Container>

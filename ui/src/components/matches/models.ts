@@ -28,7 +28,7 @@ export interface DuelOutcome {
     duel_id: string
     victory: DuelVictory
     dq?: DuelDQ
-    created_at: Date
+    created_at?: Date
 }
 
 export interface DuelVictory {
