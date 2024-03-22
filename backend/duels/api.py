@@ -12,7 +12,7 @@ import duels
 import duels.comp
 import duels.comp_excel
 import duels.model
-from duels.api_models import MatchSetup, Participant, Duel, Duels, MatchDuels, MatchCreate
+from duels.api_models import MatchSetup, Participant, Duel, Duels, MatchOutcome, MatchCreate
 from . import comp_excel
 from .inject import provide_match_repository
 from .repositories import MatchRepository
@@ -83,7 +83,7 @@ class MatchController(litestar.Controller):
     @litestar.get("/{match_id:uuid}",
                   dependencies={"match_repository": Provide(provide_match_repository)}
                   )
-    async def get_match(self, match_id: uuid.UUID, match_repository: MatchRepository) -> MatchDuels:
+    async def get_match(self, match_id: uuid.UUID, match_repository: MatchRepository) -> MatchOutcome:
         try:
             result = match_repository.get_match(match_id)
             return result

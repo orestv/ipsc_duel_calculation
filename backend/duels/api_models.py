@@ -30,12 +30,27 @@ class Duel(pydantic.BaseModel):
     clazz: duels.model.Class
 
 
-class MatchDuel(Duel):
+class MatchDuel(pydantic.BaseModel):
     id: uuid.UUID
+    left: uuid.UUID
+    right: uuid.UUID
+    clazz: duels.model.Class
 
 
-class MatchDuels(pydantic.BaseModel):
-    ranges: dict[duels.model.Range, list[MatchDuel]]
+class MatchParticipant(pydantic.BaseModel):
+    id: uuid.UUID
+    name: str
+    clazz: duels.model.Class
+
+    def __lt__(self, other: "MatchParticipant"):
+        return (self.clazz, self.name) < (other.clazz, other.name)
+
+
+class MatchOutcome(pydantic.BaseModel):
+    name: str
+    participants: list[MatchParticipant]
+    participants_by_range: dict[duels.model.Range, list[uuid.UUID]]
+    duels: dict[duels.model.Range, list[MatchDuel]]
 
 
 class Duels(pydantic.BaseModel):

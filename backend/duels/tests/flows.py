@@ -5,8 +5,8 @@ import litestar.status_codes
 from litestar.testing import AsyncTestClient
 
 from duels.api import app
-from duels.api_models import Duels, MatchSetup, RangeSetup, ClassSetup, MatchCreate
-from duels.model import Class
+from duels.api_models import Duels, MatchSetup, RangeSetup, ClassSetup, MatchCreate, MatchOutcome
+from duels.model import Class, Range
 
 
 async def test_match_empty(test_client: AsyncTestClient):
@@ -32,12 +32,13 @@ async def test_empty_match_created(test_client: AsyncTestClient, faker: Faker):
 
 
 async def test_duels_generated(test_client: AsyncTestClient, faker: Faker):
+    participant_names = list({faker.first_name() for _ in range(10)})
     match_setup = MatchSetup(
         ranges={
             "1": RangeSetup(
                 classes={
                     Class.STANDARD: ClassSetup(
-                        participants=list({faker.first_name() for _ in range(10)}),
+                        participants=participant_names,
                         times=2,
                     )
                 }
@@ -55,5 +56,14 @@ async def test_duels_generated(test_client: AsyncTestClient, faker: Faker):
     create_response = await test_client.post("/matches", content=match.json())
     assert create_response.status_code == litestar.status_codes.HTTP_201_CREATED
     match_id = create_response.json()
+
     get_response = await test_client.get(f"/matches/{match_id}")
     assert get_response.status_code == litestar.status_codes.HTTP_200_OK
+
+    fetched_match = MatchOutcome.parse_obj(get_response.json())
+    assert fetched_match.name == match.name
+
+    fetched_participant_names = [
+        p.name for p in fetched_match.participants
+    ]
+    assert sorted(fetched_participant_names) == sorted(participant_names)
