@@ -5,6 +5,7 @@ import {FaGun} from "react-icons/fa6";
 import {DuelOutcome, DuelVictory, MatchDuel, MatchInProgress, MatchOutcomes, Participant} from "./models";
 import Container from "react-bootstrap/Container";
 import {recordOutcome} from "./match_service";
+import DuelCard from "./duel_card";
 
 export interface DuelListParams {
     matchId: string
@@ -49,44 +50,57 @@ export default function DuelList(params: DuelListParams) {
     }
 
     const duelRows = []
+
     for (const duel of duels) {
         const outcome = mostRecentOutcomes[duel.id] ?? undefined
-        const victoryLeft = outcome?.victory.left ?? false
-        const victoryRight = outcome?.victory.right ?? false
         duelRows.push(
-            <tr key={duel.id}>
-                <td>{duel.order}</td>
-                <td>
-                    <Button
-                        className={'m-1'}
-                        onClick={buildOutcomeHandler(duel.id, {left: true, right: false})}
-                    ><FaGun/></Button>
-                    {participantName(params.participants[duel.left].name, victoryLeft)}
-                    {/*{params.participants[duel.left].name}*/}
-                </td>
-                <td>
-                    <Button
-                        className={'m-1'}
-                        onClick={buildOutcomeHandler(duel.id, {left: false, right: true})}
-                    ><FaGun/></Button>
-                    {participantName(params.participants[duel.right].name, victoryRight)}
-                    {/*{params.participants[duel.right].name}*/}
-                </td>
-                <td>{outcome?.created_at.toLocaleString() ?? ''}</td>
-            </tr>
+            <DuelCard
+                matchId={params.matchId}
+                duel={duel}
+                participants={params.participants}
+                outcome={outcome}
+                onOutcomeRecorded={params.onOutcomeRecorded}
+            />
         )
     }
 
+    // for (const duel of duels) {
+    //     const outcome = mostRecentOutcomes[duel.id] ?? undefined
+    //     const victoryLeft = outcome?.victory.left ?? false
+    //     const victoryRight = outcome?.victory.right ?? false
+    //     duelRows.push(
+    //         <tr key={duel.id}>
+    //             <td>{duel.order}</td>
+    //             <td>
+    //                 <Button
+    //                     className={'m-1'}
+    //                     onClick={buildOutcomeHandler(duel.id, {left: true, right: false})}
+    //                 ><FaGun/></Button>
+    //                 {participantName(params.participants[duel.left].name, victoryLeft)}
+    //             </td>
+    //             <td>
+    //                 <Button
+    //                     className={'m-1'}
+    //                     onClick={buildOutcomeHandler(duel.id, {left: false, right: true})}
+    //                 ><FaGun/></Button>
+    //                 {participantName(params.participants[duel.right].name, victoryRight)}
+    //             </td>
+    //             <td>{new Date(outcome?.created_at)?.toLocaleTimeString('uk-UA', {hour12: false}) ?? ''}</td>
+    //         </tr>
+    //     )
+    // }
+
     return (
         <Container>
-            <Table>
-                <thead>
+            {duelRows}
+            {/*<Table>*/}
+            {/*    <thead>*/}
 
-                </thead>
-                <tbody>
-                    {duelRows}
-                </tbody>
-            </Table>
+            {/*    </thead>*/}
+            {/*    <tbody>*/}
+            {/*        {duelRows}*/}
+            {/*    </tbody>*/}
+            {/*</Table>*/}
         </Container>
     )
 }

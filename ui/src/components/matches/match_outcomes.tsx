@@ -6,6 +6,7 @@ import Container from "react-bootstrap/Container";
 import {Button, Row} from "react-bootstrap";
 import DuelList from "./duel_list";
 import {fetchMatchInProgress, fetchMatchOutcomes} from "./match_service";
+import ProgressCounter from "./progress_counter";
 
 export async function loader({params}: any) {
     return <>
@@ -75,8 +76,15 @@ export function MatchReferee(params: MatchRefereeParams) {
         )
     }
 
+    const rangeDuels = match.duels[selectedRange] ?? []
+    const rangeDuelIDs = rangeDuels.map((d) => {return d.id})
+    const totalDuels = rangeDuels.length
+    const completedDuels = Object.keys(outcomes.outcomes).filter(
+        (val) => {return rangeDuelIDs.includes(val)}
+    ).length
+
     return <>
-        <h1>Матч "{match.name}"</h1>
+        <h1>Матч "{match.name}" <ProgressCounter total={totalDuels} completed={completedDuels}/></h1>
         <Navbar>
             <Container>
                 {rangeButtons}
