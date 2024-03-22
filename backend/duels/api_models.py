@@ -42,6 +42,11 @@ class Duels(pydantic.BaseModel):
     ranges: dict[duels.model.Range, list[Duel]]
 
 
+class MatchCreate(pydantic.BaseModel):
+    name: str
+    duels: Duels
+
+
 class OutcomeDQ(pydantic.BaseModel):
     left: bool = False
     right: bool = False

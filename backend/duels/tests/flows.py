@@ -1,11 +1,11 @@
 import uuid
 
-import faker
+from faker import Faker
 import litestar.status_codes
 from litestar.testing import AsyncTestClient
 
 from duels.api import app
-from duels.api_models import Duels, MatchSetup, RangeSetup, ClassSetup
+from duels.api_models import Duels, MatchSetup, RangeSetup, ClassSetup, MatchCreate
 from duels.model import Class
 
 
@@ -14,28 +14,30 @@ async def test_match_empty(test_client: AsyncTestClient):
     assert response.status_code == litestar.status_codes.HTTP_404_NOT_FOUND
 
 
-async def test_empty_match_created(test_client: AsyncTestClient):
-    duels = Duels(
-        ranges={
-            "1": [],
-            "2": [],
-        }
+async def test_empty_match_created(test_client: AsyncTestClient, faker: Faker):
+    match = MatchCreate(
+        name=faker.bs(),
+        duels=Duels(
+            ranges={
+                "1": [],
+                "2": [],
+            }
+        )
     )
-    create_response = await test_client.post("/matches", content=duels.json())
+    create_response = await test_client.post("/matches", content=match.json())
     assert create_response.status_code == litestar.status_codes.HTTP_201_CREATED
     match_id = create_response.json()
     get_response = await test_client.get(f"/matches/{match_id}")
     assert get_response.status_code == litestar.status_codes.HTTP_200_OK
 
 
-async def test_duels_generated(test_client: AsyncTestClient):
-    f = faker.Faker()
+async def test_duels_generated(test_client: AsyncTestClient, faker: Faker):
     match_setup = MatchSetup(
         ranges={
             "1": RangeSetup(
                 classes={
                     Class.STANDARD: ClassSetup(
-                        participants=list({f.first_name() for _ in range(10)}),
+                        participants=list({faker.first_name() for _ in range(10)}),
                         times=2,
                     )
                 }
@@ -46,7 +48,11 @@ async def test_duels_generated(test_client: AsyncTestClient):
     assert duels_response.status_code == litestar.status_codes.HTTP_201_CREATED
     duels = Duels.parse_obj(duels_response.json())
 
-    create_response = await test_client.post("/matches", content=duels.json())
+    match = MatchCreate(
+        name=faker.bs(),
+        duels=duels,
+    )
+    create_response = await test_client.post("/matches", content=match.json())
     assert create_response.status_code == litestar.status_codes.HTTP_201_CREATED
     match_id = create_response.json()
     get_response = await test_client.get(f"/matches/{match_id}")

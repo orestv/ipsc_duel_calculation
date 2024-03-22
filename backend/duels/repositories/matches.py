@@ -1,6 +1,6 @@
 import uuid
 
-from duels.api_models import Duels, MatchDuels, MatchDuel, DuelOutcome
+from duels.api_models import Duels, MatchDuels, MatchDuel, DuelOutcome, MatchCreate
 
 
 class MatchRepository:
@@ -11,7 +11,7 @@ class MatchRepository:
         self.matches = {}
         self.outcomes = {}
 
-    def create_match(self, duels: Duels) -> uuid.UUID:
+    def create_match(self, match: MatchCreate) -> uuid.UUID:
         match_duels = {
             rng: [
                 MatchDuel(
@@ -22,7 +22,7 @@ class MatchRepository:
                 )
                 for duel in rng_duels
             ]
-            for rng, rng_duels in duels.ranges.items()
+            for rng, rng_duels in match.duels.ranges.items()
         }
         match = MatchDuels(ranges=match_duels)
         match_id = uuid.uuid4()
