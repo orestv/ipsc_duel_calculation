@@ -4,9 +4,9 @@ import uuid
 
 import litestar
 import litestar.exceptions
+from litestar.di import Provide
 from litestar.exceptions import NotFoundException
 from litestar.response import File
-from litestar.di import Provide
 
 import duels
 import duels.comp
@@ -15,7 +15,7 @@ import duels.model
 from duels.api_models import MatchSetup, Participant, Duel, Duels, MatchInProgress, MatchCreate, DuelOutcome, \
     ParticipantVictories
 from . import comp_excel
-from .inject import provide_match_service, provide_match_repository
+from . import inject
 from .services import MatchService
 
 
@@ -73,8 +73,8 @@ class DuelsController(litestar.Controller):
 class MatchController(litestar.Controller):
     path = "/matches"
     dependencies = {
-        "match_repository": Provide(provide_match_repository),
-        "match_service": Provide(provide_match_service),
+        "match_repository": Provide(inject.provide_match_repository),
+        "match_service": Provide(inject.provide_match_service),
     }
 
     @litestar.post()
