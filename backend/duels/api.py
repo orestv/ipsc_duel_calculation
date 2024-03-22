@@ -12,7 +12,7 @@ import duels
 import duels.comp
 import duels.comp_excel
 import duels.model
-from duels.api_models import MatchSetup, Participant, Duel, Duels, MatchInProgress, MatchCreate
+from duels.api_models import MatchSetup, Participant, Duel, Duels, MatchInProgress, MatchCreate, DuelOutcome
 from . import comp_excel
 from .inject import provide_match_repository
 from .repositories import MatchRepository
@@ -89,6 +89,17 @@ class MatchController(litestar.Controller):
             return result
         except KeyError:
             raise NotFoundException()
+
+    @litestar.post("/{match_id:uuid}/duels/{duel_id:uuid}/outcomes",
+                   dependencies={"match_repository": Provide(provide_match_repository)})
+    async def record_outcome(self, match_id: uuid.UUID, duel_id: uuid.UUID, data: DuelOutcome,
+                             match_repository: MatchRepository) -> None:
+        match_repository.record_outcome(match_id, data)
+
+    @litestar.get("/{match_id:uuid}/duels/{duel_id:uuid}/outcomes",
+                  dependencies={"match_repository": Provide(provide_match_repository)})
+    async def get_outcomes(self, match_id: uuid.UUID, duel_id: uuid.UUID, match_repository: MatchRepository) -> list[DuelOutcome]:
+        return match_repository.get_outcomes(match_id, duel_id)
 
 
 def logging_exception_handler(_: litestar.Request, exc: Exception) -> litestar.Response:

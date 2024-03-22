@@ -8,7 +8,8 @@ from litestar.testing import AsyncTestClient
 
 import duels.model
 from duels.api import app
-from duels.api_models import Duels, MatchSetup, RangeSetup, ClassSetup, MatchCreate, MatchInProgress
+from duels.api_models import Duels, MatchSetup, RangeSetup, ClassSetup, MatchCreate, MatchInProgress, DuelOutcome, \
+    OutcomeVictory
 from duels.model import Class, Range
 
 
@@ -44,6 +45,7 @@ class MatchSetupFixture:
 class MatchOutcomeFixture:
     match_setup_fixture: MatchSetupFixture
     match_id: uuid.UUID
+    match_in_progress: MatchInProgress
 
 
 @pytest.fixture
@@ -80,9 +82,14 @@ async def match_outcome_fixture(test_client, faker, match_setup_fixture) -> Matc
     create_response = await test_client.post("/matches", content=match.json())
     assert create_response.status_code == litestar.status_codes.HTTP_201_CREATED
     match_id = uuid.UUID(create_response.json())
+
+    match_response = await test_client.get(f"/matches/{match_id}")
+    assert match_response.status_code == litestar.status_codes.HTTP_200_OK
+    match_in_progress = MatchInProgress.parse_obj(match_response.json())
     return MatchOutcomeFixture(
         match_setup_fixture=match_setup_fixture,
         match_id=match_id,
+        match_in_progress=match_in_progress,
     )
 
 async def test_duels_generated(test_client: AsyncTestClient, match_setup_fixture: MatchSetupFixture, faker):
@@ -111,5 +118,25 @@ async def test_duels_generated(test_client: AsyncTestClient, match_setup_fixture
     assert sorted(fetched_participant_names) == sorted(match_setup_fixture.participants[Class.STANDARD])
 
 
-async def test_record_outcome(match_outcome_fixture):
+async def test_record_outcome(test_client: AsyncTestClient, match_outcome_fixture: MatchOutcomeFixture):
     print(match_outcome_fixture)
+    range_1_duels = match_outcome_fixture.match_in_progress.duels[Range.First]
+
+    duel = range_1_duels[0]
+    outcome = DuelOutcome(
+        duel_id=duel.id,
+        victory=OutcomeVictory(left=True),
+        created_at=None,
+    )
+    outcome_url = f"/matches/{match_outcome_fixture.match_id}/duels/{duel.id}/outcomes"
+    outcome_create_response = await test_client.post(
+        outcome_url,
+        content=outcome.json(),
+    )
+    assert outcome_create_response.status_code == litestar.status_codes.HTTP_201_CREATED
+
+    outcome_get_response = await test_client.get(outcome_url)
+    assert outcome_get_response.status_code == litestar.status_codes.HTTP_200_OK
+    fetched_outcomes = [DuelOutcome.parse_obj(x) for x in outcome_get_response.json()]
+    assert len(fetched_outcomes) == 1
+

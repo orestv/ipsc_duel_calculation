@@ -32,6 +32,7 @@ class Duel(pydantic.BaseModel):
 
 class MatchDuel(pydantic.BaseModel):
     id: uuid.UUID
+    order: int
     left: uuid.UUID
     right: uuid.UUID
     clazz: duels.model.Class
@@ -44,14 +45,6 @@ class MatchParticipant(pydantic.BaseModel):
 
     def __lt__(self, other: "MatchParticipant"):
         return (self.clazz, self.name) < (other.clazz, other.name)
-
-
-class MatchInProgress(pydantic.BaseModel):
-    id: uuid.UUID
-    name: str
-    participants: list[MatchParticipant]
-    participants_by_range: dict[duels.model.Range, list[uuid.UUID]]
-    duels: dict[duels.model.Range, list[MatchDuel]]
 
 
 class Duels(pydantic.BaseModel):
@@ -74,6 +67,19 @@ class OutcomeVictory(pydantic.BaseModel):
 
 
 class DuelOutcome(pydantic.BaseModel):
-    duel: MatchDuel
-    dq: OutcomeDQ
-    created_at: typing.Optional[datetime.datetime]
+    duel_id: uuid.UUID
+    victory: OutcomeVictory
+    dq: typing.Optional[OutcomeDQ] = None
+    created_at: typing.Optional[datetime.datetime] = datetime.datetime.now()
+
+
+class MatchInProgress(pydantic.BaseModel):
+    id: uuid.UUID
+    name: str
+    participants: list[MatchParticipant]
+    participants_by_range: dict[duels.model.Range, list[uuid.UUID]]
+    duels: dict[duels.model.Range, list[MatchDuel]]
+
+
+class MatchOutcomes(pydantic.BaseModel):
+    outcomes: dict[uuid.UUID, list[DuelOutcome]] = {}
