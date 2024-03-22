@@ -1,11 +1,12 @@
 import React, {useEffect, useState} from "react";
 import {Link, useLoaderData} from "react-router-dom";
 import {API_ROOT} from "../../storage";
-import {MatchInProgress, MatchOutcomes} from "../models";
+import {MatchInProgress, MatchOutcomes, Participant} from "../models";
 import Nav from "react-bootstrap/Nav";
 import Navbar from "react-bootstrap/Navbar";
 import Container from "react-bootstrap/Container";
 import {Button, Col, Row} from "react-bootstrap";
+import DuelList from "./duel_list";
 
 export async function loader({params}: any) {
     return <>
@@ -36,6 +37,16 @@ interface MatchRefereeParams {
     matchId: string
 }
 
+function getParticipantDictionary(participants: Participant[]): {[key: string]:Participant} {
+    return participants.reduce(
+        (obj, participant) => {
+            obj[participant.id] = participant
+            return obj
+        },
+        {} as {[key: string]: Participant}
+    )
+}
+
 export function MatchReferee(params: MatchRefereeParams) {
     const defaultMatch = (): MatchInProgress => {
         return {created_at: undefined, duels: {}, id: "", name: "", participants: []}
@@ -47,8 +58,8 @@ export function MatchReferee(params: MatchRefereeParams) {
         })()
     }, []);
 
-    const ranges = Object.keys(match.duels)
-    const [selectedRange, setSelectedRange] = useState("1")
+    const ranges = Object.keys(match.duels).map(Number)
+    const [selectedRange, setSelectedRange] = useState(1)
     const rangeButtons = []
     for (const r of ranges) {
         rangeButtons.push(
@@ -64,6 +75,8 @@ export function MatchReferee(params: MatchRefereeParams) {
         )
     }
 
+    console.log(match.duels)
+
     return <>
         <h1>Матч "{match.name}"</h1>
         <Navbar>
@@ -73,7 +86,12 @@ export function MatchReferee(params: MatchRefereeParams) {
         </Navbar>
         <Container fluid>
             <Row>
-
+                <DuelList
+                    matchId={params.matchId}
+                    range={selectedRange}
+                    participants={getParticipantDictionary(match.participants)}
+                    duels={match.duels[selectedRange] ?? []}
+                />
             </Row>
         </Container>
     </>
