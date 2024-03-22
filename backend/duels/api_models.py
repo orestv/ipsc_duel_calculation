@@ -83,3 +83,8 @@ class MatchInProgress(pydantic.BaseModel):
 
 class MatchOutcomes(pydantic.BaseModel):
     outcomes: dict[uuid.UUID, list[DuelOutcome]] = {}
+
+
+class ParticipantVictories(pydantic.BaseModel):
+    participant_id: uuid.UUID
+    victories: int

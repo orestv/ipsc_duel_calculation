@@ -1,8 +1,10 @@
+import datetime
 import itertools
 import uuid
 
 import duels.model
-from duels.api_models import MatchInProgress, MatchDuel, DuelOutcome, MatchCreate, MatchParticipant, MatchOutcomes
+from duels.api_models import MatchInProgress, MatchDuel, DuelOutcome, MatchCreate, MatchParticipant, MatchOutcomes, \
+    ParticipantVictories
 
 
 class MatchRepository:
@@ -87,6 +89,7 @@ class MatchRepository:
         return self.outcomes[match_id]
 
     def record_outcome(self, match_id: uuid.UUID, outcome: DuelOutcome):
+        outcome.created_at = datetime.datetime.now()
         match_outcomes = self.outcomes[match_id].outcomes
         if outcome.duel_id not in match_outcomes:
             match_outcomes[outcome.duel_id] = list()
@@ -94,3 +97,31 @@ class MatchRepository:
 
     def get_outcomes(self, match_id: uuid.UUID, duel_id: uuid.UUID) -> list[DuelOutcome]:
         return self.outcomes[match_id].outcomes.get(duel_id, [])
+
+    def get_victories(self, match_id: uuid) -> list[ParticipantVictories]:
+        participants = {p.id:
+            ParticipantVictories(
+                participant_id=p.id,
+                victories=0,
+            )
+            for p in self.matches[match_id].participants
+        }
+        match_outcomes = self.outcomes[match_id].outcomes
+
+        for duels in self.matches[match_id].duels.values():
+            for duel in duels:
+                if duel.id not in match_outcomes:
+                    continue
+
+                outcomes = match_outcomes[duel.id]
+                outcomes = list(sorted(outcomes, key=lambda o: o.created_at))
+                last_outcome = outcomes[-1]
+
+                if last_outcome.victory.left:
+                    participants[duel.left].victories += 1
+                if last_outcome.victory.right:
+                    participants[duel.right].victories += 1
+
+                # todo: record DQ
+
+        return list(participants.values())
