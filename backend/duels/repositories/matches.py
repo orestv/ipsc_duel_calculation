@@ -1,5 +1,6 @@
 import datetime
 import itertools
+import typing
 import uuid
 
 import duels.model
@@ -14,6 +15,41 @@ class MatchRepository:
     def __init__(self):
         self.matches = {}
         self.outcomes = {}
+
+    def add_match(self, match: MatchInProgress) -> uuid.UUID:
+        match.id = uuid.uuid4()
+        self.matches[match.id] = match
+        self.outcomes[match.id] = MatchOutcomes()
+        return match.id
+
+    def get_matches(self) -> list[MatchInProgress]:
+        return list(self.matches.values())
+
+    def delete_match(self, match_id: uuid.UUID) -> None:
+        del self.matches[match_id]
+        del self.outcomes[match_id]
+
+    def get_match(self, match_id: uuid.UUID) -> MatchInProgress:
+        return self.matches[match_id]
+
+    def get_match_outcomes(self, match_id: uuid.UUID) -> MatchOutcomes:
+        return self.outcomes[match_id]
+
+    def add_outcome(self, match_id: uuid.UUID, outcome: DuelOutcome):
+        match_outcomes = self.outcomes[match_id].outcomes
+        if outcome.duel_id not in match_outcomes:
+            match_outcomes[outcome.duel_id] = list()
+        match_outcomes[outcome.duel_id].append(outcome)
+
+    def get_duel_outcomes(self, match_id: uuid.UUID, duel_id: uuid.UUID) -> list[DuelOutcome]:
+        return self.outcomes[match_id].outcomes.get(duel_id, [])
+
+
+class MatchService:
+    repository: MatchRepository
+
+    def __init__(self, repository: MatchRepository):
+        self.repository = repository
 
     def create_match(self, match: MatchCreate) -> uuid.UUID:
         all_duels = list(itertools.chain(
@@ -59,73 +95,66 @@ class MatchRepository:
                         break
 
         match = MatchInProgress(
-            id=uuid.uuid4(),
             name=match.name,
             participants=participants,
             participants_by_range=participants_by_range,
             duels=match_duels,
         )
-        match_id = uuid.uuid4()
-        self.matches[match_id] = match
-        self.outcomes[match_id] = MatchOutcomes()
+        match_id = self.repository.add_match(match)
         return match_id
 
-    def _get_participant_id(self, name: str, clazz: duels.model.Class, participants: list[MatchParticipant]) -> uuid.UUID:
+    def _get_participant_id(self, name: str, clazz: duels.model.Class,
+                            participants: list[MatchParticipant]) -> uuid.UUID:
         for participant in participants:
             if participant.name == name and participant.clazz == clazz:
                 return participant.id
         raise KeyError(f"participant {name} ({clazz}) not found")
 
     def get_all_matches(self) -> list[MatchInProgress]:
-        return [self.matches.values()]
+        return self.repository.get_matches()
 
     def delete_match(self, match_id: uuid.UUID) -> None:
-        del self.matches[match_id]
+        self.repository.delete_match(match_id)
 
     def get_match(self, match_id: uuid.UUID) -> MatchInProgress:
-        return self.matches[match_id]
+        return self.repository.get_match(match_id)
 
     def get_match_outcomes(self, match_id: uuid.UUID) -> MatchOutcomes:
-        return self.outcomes[match_id]
+        return self.repository.get_match_outcomes(match_id)
 
     def record_outcome(self, match_id: uuid.UUID, outcome: DuelOutcome):
         outcome.created_at = datetime.datetime.now()
-        match_outcomes = self.outcomes[match_id].outcomes
-        if outcome.duel_id not in match_outcomes:
-            match_outcomes[outcome.duel_id] = list()
-        match_outcomes[outcome.duel_id].append(outcome)
+        self.repository.add_outcome(match_id, outcome)
 
-    def get_outcomes(self, match_id: uuid.UUID, duel_id: uuid.UUID) -> list[DuelOutcome]:
-        return self.outcomes[match_id].outcomes.get(duel_id, [])
+    def get_duel_outcomes(self, match_id: uuid.UUID, duel_id: uuid.UUID) -> list[DuelOutcome]:
+        return self.repository.get_duel_outcomes(match_id, duel_id)
 
     def get_victories(self, match_id: uuid) -> list[ParticipantVictories]:
-        participants = {p.id:
-            ParticipantVictories(
+        match = self.repository.get_match(match_id)
+        participants = {
+            p.id: ParticipantVictories(
                 participant_id=p.id,
                 victories=0,
             )
-            for p in self.matches[match_id].participants
+            for p in match.participants
         }
-        match_outcomes = self.outcomes[match_id].outcomes
 
-        for duels in self.matches[match_id].duels.values():
+        for duels in match.duels.values():
             for duel in duels:
-                if duel.id not in match_outcomes:
+
+                outcome = self._get_duel_outcome(duel, match_id)
+                if not outcome:
                     continue
 
-                outcomes = match_outcomes[duel.id]
-                outcomes = list(sorted(outcomes, key=lambda o: o.created_at))
-                last_outcome = outcomes[-1]
-
-                if last_outcome.dq:
-                    if last_outcome.dq.left:
+                if outcome.dq:
+                    if outcome.dq.left:
                         participants[duel.left].dq = True
-                    if last_outcome.dq.right:
+                    if outcome.dq.right:
                         participants[duel.right].dq = True
 
-                if last_outcome.victory.left:
+                if outcome.victory.left:
                     participants[duel.left].victories += 1
-                if last_outcome.victory.right:
+                if outcome.victory.right:
                     participants[duel.right].victories += 1
 
         result = list(participants.values())
@@ -134,3 +163,11 @@ class MatchRepository:
                 p.victories = 0
 
         return result
+
+    def _get_duel_outcome(self, duel, match_id) -> typing.Optional[DuelOutcome]:
+        duel_outcomes = self.repository.get_duel_outcomes(match_id, duel.id)
+        if not duel_outcomes:
+            return None
+        duel_outcomes = list(sorted(duel_outcomes, key=lambda o: o.created_at))
+        last_outcome = duel_outcomes[-1]
+        return last_outcome

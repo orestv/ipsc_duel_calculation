@@ -15,8 +15,8 @@ import duels.model
 from duels.api_models import MatchSetup, Participant, Duel, Duels, MatchInProgress, MatchCreate, DuelOutcome, \
     ParticipantVictories
 from . import comp_excel
-from .inject import provide_match_repository
-from .repositories import MatchRepository
+from .inject import provide_match_service, provide_match_repository
+from .repositories import MatchService
 
 
 class DuelsController(litestar.Controller):
@@ -72,33 +72,36 @@ class DuelsController(litestar.Controller):
 
 class MatchController(litestar.Controller):
     path = "/matches"
-    dependencies = {"match_repository": Provide(provide_match_repository)}
+    dependencies = {
+        "match_repository": Provide(provide_match_repository),
+        "match_service": Provide(provide_match_service),
+    }
 
     @litestar.post()
-    async def create_match(self, data: MatchCreate, match_repository: MatchRepository) -> uuid.UUID:
-        return match_repository.create_match(data)
+    async def create_match(self, data: MatchCreate, match_service: MatchService) -> uuid.UUID:
+        return match_service.create_match(data)
 
     @litestar.get("/{match_id:uuid}")
-    async def get_match(self, match_id: uuid.UUID, match_repository: MatchRepository) -> MatchInProgress:
+    async def get_match(self, match_id: uuid.UUID, match_service: MatchService) -> MatchInProgress:
         try:
-            result = match_repository.get_match(match_id)
+            result = match_service.get_match(match_id)
             return result
         except KeyError:
             raise NotFoundException()
 
     @litestar.post("/{match_id:uuid}/duels/{duel_id:uuid}/outcomes")
     async def record_outcome(self, match_id: uuid.UUID, duel_id: uuid.UUID, data: DuelOutcome,
-                             match_repository: MatchRepository) -> None:
-        match_repository.record_outcome(match_id, data)
+                             match_service: MatchService) -> None:
+        match_service.record_outcome(match_id, data)
 
     @litestar.get("/{match_id:uuid}/duels/{duel_id:uuid}/outcomes")
-    async def get_outcomes(self, match_id: uuid.UUID, duel_id: uuid.UUID, match_repository: MatchRepository) -> list[
+    async def get_outcomes(self, match_id: uuid.UUID, duel_id: uuid.UUID, match_service: MatchService) -> list[
         DuelOutcome]:
-        return match_repository.get_outcomes(match_id, duel_id)
+        return match_service.get_duel_outcomes(match_id, duel_id)
 
     @litestar.get("/{match_id:uuid}/victories")
-    async def get_victories(self, match_id: uuid.UUID, match_repository: MatchRepository) -> list[ParticipantVictories]:
-        return match_repository.get_victories(match_id)
+    async def get_victories(self, match_id: uuid.UUID, match_service: MatchService) -> list[ParticipantVictories]:
+        return match_service.get_victories(match_id)
 
 
 def logging_exception_handler(_: litestar.Request, exc: Exception) -> litestar.Response:

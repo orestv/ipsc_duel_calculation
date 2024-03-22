@@ -1,1 +1,1 @@
-from .matches import MatchRepository
+from .matches import MatchService

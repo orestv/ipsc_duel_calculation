@@ -74,7 +74,7 @@ class DuelOutcome(pydantic.BaseModel):
 
 
 class MatchInProgress(pydantic.BaseModel):
-    id: uuid.UUID
+    id: uuid.UUID = None
     name: str
     participants: list[MatchParticipant]
     participants_by_range: dict[duels.model.Range, list[uuid.UUID]]
