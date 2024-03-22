@@ -92,6 +92,7 @@ async def match_outcome_fixture(test_client, faker, match_setup_fixture) -> Matc
         match_in_progress=match_in_progress,
     )
 
+
 async def test_duels_generated(test_client: AsyncTestClient, match_setup_fixture: MatchSetupFixture, faker):
     match_setup = match_setup_fixture.match_setup
     duels_response = await test_client.post("/duels", content=match_setup.json())
@@ -215,8 +216,8 @@ async def test_calculate_dq(test_client: AsyncTestClient, match_outcome_fixture:
         right=duel.right != victor.id,
     )
     dq = OutcomeDQ(
-        left=duel.left==victor.id,
-        right=duel.right==victor.id,
+        left=duel.left == victor.id,
+        right=duel.right == victor.id,
     )
     outcome = DuelOutcome(
         duel_id=duel.id,
@@ -238,7 +239,8 @@ async def test_calculate_dq(test_client: AsyncTestClient, match_outcome_fixture:
     assert fetched_victor.victories == 0
 
 
-async def test_calculate_overwritten_victories(test_client: AsyncTestClient, match_outcome_fixture: MatchOutcomeFixture):
+async def test_calculate_overwritten_victories(test_client: AsyncTestClient,
+                                               match_outcome_fixture: MatchOutcomeFixture):
     victor = match_outcome_fixture.match_in_progress.participants[0]
     victor_duels = [
         d
