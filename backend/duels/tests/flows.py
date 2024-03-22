@@ -40,6 +40,12 @@ class MatchSetupFixture:
     participants: dict[duels.model.Class, list[str]]
 
 
+@dataclasses.dataclass
+class MatchOutcomeFixture:
+    match_setup_fixture: MatchSetupFixture
+    match_id: uuid.UUID
+
+
 @pytest.fixture
 def match_setup_fixture(faker) -> MatchSetupFixture:
     participant_names = list({faker.first_name() for _ in range(10)})
@@ -60,6 +66,24 @@ def match_setup_fixture(faker) -> MatchSetupFixture:
         match_setup=match_setup,
     )
 
+
+@pytest.fixture
+async def match_outcome_fixture(test_client, faker, match_setup_fixture) -> MatchOutcomeFixture:
+    duels_response = await test_client.post("/duels", content=match_setup_fixture.match_setup.json())
+    assert duels_response.status_code == litestar.status_codes.HTTP_201_CREATED
+    duels = Duels.parse_obj(duels_response.json())
+
+    match = MatchCreate(
+        name=faker.bs(),
+        duels=duels,
+    )
+    create_response = await test_client.post("/matches", content=match.json())
+    assert create_response.status_code == litestar.status_codes.HTTP_201_CREATED
+    match_id = uuid.UUID(create_response.json())
+    return MatchOutcomeFixture(
+        match_setup_fixture=match_setup_fixture,
+        match_id=match_id,
+    )
 
 async def test_duels_generated(test_client: AsyncTestClient, match_setup_fixture: MatchSetupFixture, faker):
     match_setup = match_setup_fixture.match_setup
@@ -86,5 +110,6 @@ async def test_duels_generated(test_client: AsyncTestClient, match_setup_fixture
     ]
     assert sorted(fetched_participant_names) == sorted(match_setup_fixture.participants[Class.STANDARD])
 
-async def test_record_outcome(match_setup_fixture):
-    print(match_setup_fixture)
+
+async def test_record_outcome(match_outcome_fixture):
+    print(match_outcome_fixture)
