@@ -237,6 +237,7 @@ async def test_calculate_dq(test_client: AsyncTestClient, match_outcome_fixture:
     assert len(victories) == len(match_outcome_fixture.match_in_progress.participants)
     fetched_victor = [v for v in victories if v.participant_id == victor.id][0]
     assert fetched_victor.victories == 0
+    assert fetched_victor.dq == True
 
 
 async def test_calculate_overwritten_victories(test_client: AsyncTestClient,
