@@ -2,10 +2,10 @@ import React, {useEffect, useState} from "react";
 import Container from "react-bootstrap/Container";
 import {Button, Table} from "react-bootstrap";
 import {deleteMatch, fetchMatches} from "./match_service";
-import {MatchInProgress} from "./models";
 import {FaDeleteLeft} from "react-icons/fa6";
 import {FaPlay, FaTrash} from "react-icons/fa";
 import {Link} from "react-router-dom";
+import {MatchInProgress} from "../models";
 
 export default function MatchList() {
     const emptyMatches: MatchInProgress[] = []

@@ -2,7 +2,7 @@ export interface MatchInProgress {
     id: string
     name: string
     participants: Participant[]
-    duels: { [key: string]: MatchDuel[]}
+    duels: { [key: string]: MatchDuel[] }
     created_at: Date
 }
 
@@ -21,7 +21,7 @@ export interface MatchDuel {
 }
 
 export interface MatchOutcomes {
-    outcomes: { [key: string]: DuelOutcome[]}
+    outcomes: { [key: string]: DuelOutcome[] }
 }
 
 export interface DuelOutcome {

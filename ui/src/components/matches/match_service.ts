@@ -1,5 +1,6 @@
 import {API_ROOT} from "../../storage";
-import {MatchInProgress} from "./models";
+
+import {MatchInProgress} from "../models";
 
 export async function fetchMatches(): Promise<MatchInProgress[]> {
     const response = await fetch(
