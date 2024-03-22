@@ -15,7 +15,7 @@ from duels.model import Class, Range
 
 async def test_match_empty(test_client: AsyncTestClient):
     response = await test_client.get(f"/matches/{uuid.uuid4()}")
-    assert response.status_code == litestar.status_codes.HTTP_404_NOT_FOUND
+    assert response.status_code == litestar.status_codes.HTTP_404_NOT_FOUND, f"Error: {response.text}"\
 
 
 async def test_empty_match_created(test_client: AsyncTestClient, faker: Faker):
@@ -108,7 +108,7 @@ async def test_duels_generated(test_client: AsyncTestClient, match_setup_fixture
     match_id = create_response.json()
 
     get_response = await test_client.get(f"/matches/{match_id}")
-    assert get_response.status_code == litestar.status_codes.HTTP_200_OK
+    assert get_response.status_code == litestar.status_codes.HTTP_200_OK, f"Failed to get response: {get_response.text}"
 
     fetched_match = MatchInProgress.parse_obj(get_response.json())
     assert fetched_match.name == match.name

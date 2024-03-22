@@ -3,16 +3,18 @@ import itertools
 import typing
 import uuid
 
+import litestar.exceptions
+
 import duels.model
 from duels.api_models import MatchCreate, MatchParticipant, MatchDuel, MatchInProgress, MatchOutcomes, DuelOutcome, \
     ParticipantVictories
-from duels.repositories.match import InMemoryMatchRepository
+from duels.repositories import MatchRepository
 
 
 class MatchService:
-    repository: InMemoryMatchRepository
+    repository: MatchRepository
 
-    def __init__(self, repository: InMemoryMatchRepository):
+    def __init__(self, repository: MatchRepository):
         self.repository = repository
 
     async def create_match(self, match: MatchCreate) -> uuid.UUID:
@@ -81,7 +83,10 @@ class MatchService:
         self.repository.delete_match(match_id)
 
     async def get_match(self, match_id: uuid.UUID) -> MatchInProgress:
-        return await self.repository.get_match(match_id)
+        try:
+            return await self.repository.get_match(match_id)
+        except KeyError:
+            raise litestar.exceptions.NotFoundException()
 
     async def get_match_outcomes(self, match_id: uuid.UUID) -> MatchOutcomes:
         return await self.repository.get_match_outcomes(match_id)

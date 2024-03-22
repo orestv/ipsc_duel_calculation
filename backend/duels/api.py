@@ -7,6 +7,7 @@ import litestar.exceptions
 from litestar.di import Provide
 from litestar.exceptions import NotFoundException
 from litestar.response import File
+from litestar.status_codes import HTTP_500_INTERNAL_SERVER_ERROR
 
 import duels
 import duels.comp
@@ -105,6 +106,8 @@ class MatchController(litestar.Controller):
 
 def logging_exception_handler(_: litestar.Request, exc: Exception) -> litestar.Response:
     logging.exception(exc)
+    # if isinstance(exc, litestar.exceptions.LitestarException):
+    #     raise exc
     return litestar.Response(
         media_type=litestar.MediaType.JSON,
         content={"error": str(exc)},

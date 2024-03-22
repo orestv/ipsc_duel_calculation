@@ -27,14 +27,14 @@ class InMemoryMatchRepository:
     async def get_match(self, match_id: uuid.UUID) -> MatchInProgress:
         return self.matches[match_id]
 
-    async def get_match_outcomes(self, match_id: uuid.UUID) -> MatchOutcomes:
-        return self.outcomes[match_id]
-
     async def add_outcome(self, match_id: uuid.UUID, outcome: DuelOutcome):
         match_outcomes = self.outcomes[match_id].outcomes
         if outcome.duel_id not in match_outcomes:
             match_outcomes[outcome.duel_id] = list()
         match_outcomes[outcome.duel_id].append(outcome)
+
+    async def get_match_outcomes(self, match_id: uuid.UUID) -> MatchOutcomes:
+        return self.outcomes[match_id]
 
     async def get_duel_outcomes(self, match_id: uuid.UUID, duel_id: uuid.UUID) -> list[DuelOutcome]:
         return self.outcomes[match_id].outcomes.get(duel_id, [])
