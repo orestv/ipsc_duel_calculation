@@ -79,29 +79,28 @@ class MatchController(litestar.Controller):
 
     @litestar.post()
     async def create_match(self, data: MatchCreate, match_service: MatchService) -> uuid.UUID:
-        return match_service.create_match(data)
+        return await match_service.create_match(data)
 
     @litestar.get("/{match_id:uuid}")
     async def get_match(self, match_id: uuid.UUID, match_service: MatchService) -> MatchInProgress:
         try:
-            result = match_service.get_match(match_id)
-            return result
+            return await match_service.get_match(match_id)
         except KeyError:
             raise NotFoundException()
 
     @litestar.post("/{match_id:uuid}/duels/{duel_id:uuid}/outcomes")
     async def record_outcome(self, match_id: uuid.UUID, duel_id: uuid.UUID, data: DuelOutcome,
                              match_service: MatchService) -> None:
-        match_service.record_outcome(match_id, data)
+        await match_service.record_outcome(match_id, data)
 
     @litestar.get("/{match_id:uuid}/duels/{duel_id:uuid}/outcomes")
     async def get_outcomes(self, match_id: uuid.UUID, duel_id: uuid.UUID, match_service: MatchService) -> list[
         DuelOutcome]:
-        return match_service.get_duel_outcomes(match_id, duel_id)
+        return await match_service.get_duel_outcomes(match_id, duel_id)
 
     @litestar.get("/{match_id:uuid}/victories")
     async def get_victories(self, match_id: uuid.UUID, match_service: MatchService) -> list[ParticipantVictories]:
-        return match_service.get_victories(match_id)
+        return await match_service.get_victories(match_id)
 
 
 def logging_exception_handler(_: litestar.Request, exc: Exception) -> litestar.Response:
