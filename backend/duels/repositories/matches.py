@@ -2,11 +2,11 @@ import itertools
 import uuid
 
 import duels.model
-from duels.api_models import Duels, MatchOutcome, MatchDuel, DuelOutcome, MatchCreate, MatchParticipant
+from duels.api_models import Duels, MatchInProgress, MatchDuel, DuelOutcome, MatchCreate, MatchParticipant
 
 
 class MatchRepository:
-    matches: dict[uuid.UUID, MatchOutcome]
+    matches: dict[uuid.UUID, MatchInProgress]
     outcomes: dict[uuid.UUID, DuelOutcome]
 
     def __init__(self):
@@ -55,7 +55,8 @@ class MatchRepository:
                         participants_by_range[rng].append(p.id)
                         break
 
-        match = MatchOutcome(
+        match = MatchInProgress(
+            id=uuid.uuid4(),
             name=match.name,
             participants=participants,
             participants_by_range=participants_by_range,
@@ -71,8 +72,8 @@ class MatchRepository:
                 return participant.id
         raise KeyError(f"participant {name} ({clazz}) not found")
 
-    def get_all_matches(self) -> list[MatchOutcome]:
-        return []
+    def get_all_matches(self) -> list[MatchInProgress]:
+        return [self.matches.values()]
 
-    def get_match(self, match_id: uuid.UUID) -> MatchOutcome:
+    def get_match(self, match_id: uuid.UUID) -> MatchInProgress:
         return self.matches[match_id]

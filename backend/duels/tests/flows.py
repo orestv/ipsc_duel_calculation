@@ -5,7 +5,7 @@ import litestar.status_codes
 from litestar.testing import AsyncTestClient
 
 from duels.api import app
-from duels.api_models import Duels, MatchSetup, RangeSetup, ClassSetup, MatchCreate, MatchOutcome
+from duels.api_models import Duels, MatchSetup, RangeSetup, ClassSetup, MatchCreate, MatchInProgress
 from duels.model import Class, Range
 
 
@@ -60,7 +60,7 @@ async def test_duels_generated(test_client: AsyncTestClient, faker: Faker):
     get_response = await test_client.get(f"/matches/{match_id}")
     assert get_response.status_code == litestar.status_codes.HTTP_200_OK
 
-    fetched_match = MatchOutcome.parse_obj(get_response.json())
+    fetched_match = MatchInProgress.parse_obj(get_response.json())
     assert fetched_match.name == match.name
 
     fetched_participant_names = [
