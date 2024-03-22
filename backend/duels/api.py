@@ -14,7 +14,7 @@ import duels.comp
 import duels.comp_excel
 import duels.model
 from duels.api_models import MatchSetup, Participant, Duel, Duels, MatchInProgress, MatchCreate, DuelOutcome, \
-    ParticipantVictories
+    ParticipantVictories, MatchOutcomes
 from . import comp_excel
 from . import inject
 from .services import MatchService
@@ -106,6 +106,10 @@ class MatchController(litestar.Controller):
     async def get_outcomes(self, match_id: uuid.UUID, duel_id: uuid.UUID, match_service: MatchService) -> list[
         DuelOutcome]:
         return await match_service.get_duel_outcomes(match_id, duel_id)
+
+    @litestar.get("{match_id:uuid}/outcomes")
+    async def get_all_outcomes(self, match_id: uuid.UUID, match_service: MatchService) -> MatchOutcomes:
+        return await match_service.get_match_outcomes(match_id)
 
     @litestar.get("/{match_id:uuid}/victories")
     async def get_victories(self, match_id: uuid.UUID, match_service: MatchService) -> list[ParticipantVictories]:

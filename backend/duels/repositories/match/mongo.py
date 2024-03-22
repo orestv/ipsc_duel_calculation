@@ -44,7 +44,11 @@ class MongoMatchRepository(MatchRepository):
     async def get_match_outcomes(self, match_id: uuid.UUID) -> MatchOutcomes:
         docs = self.outcomes.find({"match_id": match_id})
         duel_outcomes = [DuelOutcome.parse_obj(doc) async for doc in docs]
-        return MatchOutcomes(outcomes=duel_outcomes)
+        result = {
+            outcome.duel_id: outcome
+            for outcome in duel_outcomes
+        }
+        return MatchOutcomes(outcomes=result)
 
     async def get_duel_outcomes(self, match_id: uuid.UUID, duel_id: uuid.UUID) -> list[DuelOutcome]:
         docs = self.outcomes.find({"duel_id": duel_id})

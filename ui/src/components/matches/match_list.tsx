@@ -4,7 +4,8 @@ import {Button, Table} from "react-bootstrap";
 import {deleteMatch, fetchMatches} from "./match_service";
 import {MatchInProgress} from "./models";
 import {FaDeleteLeft} from "react-icons/fa6";
-import {FaTrash} from "react-icons/fa";
+import {FaPlay, FaTrash} from "react-icons/fa";
+import {Link} from "react-router-dom";
 
 export default function MatchList() {
     const emptyMatches: MatchInProgress[] = []
@@ -30,12 +31,15 @@ export default function MatchList() {
         const createdAt = match.created_at != null ? match.created_at.toLocaleString() : 'N/A'
         rows.push(
             <tr key={match.id}>
-                <td></td>
+                <td>{match.id}</td>
                 <td>{match.name}</td>
                 <td>{createdAt}</td>
                 <td></td>
                 <td>
-                    <Button variant="danger" onClick={buildMatchDeleteClickHandler(match.id)}><FaTrash/></Button>
+                    <Link className="m-1" to={`/matches/${match.id}`}>
+                        <Button><FaPlay/></Button>
+                    </Link>
+                    <Button  className="m-1" variant="danger" onClick={buildMatchDeleteClickHandler(match.id)}><FaTrash/></Button>
                 </td>
             </tr>
         )

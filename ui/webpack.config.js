@@ -33,7 +33,8 @@ module.exports = {
     },
     output: {
         filename: 'bundle.js',
-        path: path.resolve(__dirname, 'dist'),
+        path: path.resolve('dist'),
+        publicPath: "/",
     },
     plugins: [
         HTMLWebpackPluginConfig,
@@ -42,9 +43,7 @@ module.exports = {
     devServer: {
         static: path.join(__dirname, "dist"),
         port: 4000,
-        historyApiFallback: {
-          index: 'index.html'
-        },
+        historyApiFallback: true,
         compress: true,
         watchFiles: ["./src/*"],
         proxy: {

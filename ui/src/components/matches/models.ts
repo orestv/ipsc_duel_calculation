@@ -19,3 +19,24 @@ export interface MatchDuel {
     right: string
     clazz: string
 }
+
+export interface MatchOutcomes {
+    outcomes: { [key: string]: DuelOutcome[]}
+}
+
+export interface DuelOutcome {
+    duel_id: string
+    victory: DuelVictory
+    dq?: DuelDQ
+    created_at: Date
+}
+
+export interface DuelVictory {
+    left: boolean
+    right: boolean
+}
+
+export interface DuelDQ {
+    left: boolean
+    right: boolean
+}

@@ -10,6 +10,7 @@ import App from "./components/app";
 import Root from "./components/root";
 import Container from "react-bootstrap/Container";
 import MatchList from "./components/matches/match_list";
+import {loader as matchLoader, MatchOutcomesComponent} from "./components/matches/match_outcomes";
 
 const router = createBrowserRouter([
   {
@@ -23,7 +24,12 @@ const router = createBrowserRouter([
       {
         path: "matches",
         element: <MatchList/>
-      }
+      },
+      {
+        loader: matchLoader,
+        path: "/matches/:matchId/",
+        element: <MatchOutcomesComponent/>
+      },
     ]
   },
 ]);
