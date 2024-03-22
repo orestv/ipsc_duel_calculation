@@ -1,1 +1,1 @@
-from .matches import MatchService
+from .match import MatchRepository, InMemoryMatchRepository, MongoMatchRepository

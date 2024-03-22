@@ -1,8 +1,8 @@
 import functools
 import os
 
-from duels.repositories import MatchService
-from duels.repositories.matches import InMemoryMatchRepository
+from duels.services import MatchService
+from duels.repositories import InMemoryMatchRepository
 
 mongo_url = os.getenv("MONGO_URL")
 match_repository = InMemoryMatchRepository()

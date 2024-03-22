@@ -16,7 +16,7 @@ from duels.api_models import MatchSetup, Participant, Duel, Duels, MatchInProgre
     ParticipantVictories
 from . import comp_excel
 from .inject import provide_match_service, provide_match_repository
-from .repositories import MatchService
+from .services import MatchService
 
 
 class DuelsController(litestar.Controller):
