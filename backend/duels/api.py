@@ -115,8 +115,12 @@ def logging_exception_handler(_: litestar.Request, exc: Exception) -> litestar.R
     )
 
 
-app = litestar.Litestar(
+base_router = litestar.Router(
+    path='/api',
     route_handlers=[DuelsController, MatchController],
+)
+app = litestar.Litestar(
+    route_handlers=[base_router, ],
     # cors_config=CORSConfig(allow_origins=["http://localhost:4000"]),
     # exception_handlers={Exception: logging_exception_handler},
 )

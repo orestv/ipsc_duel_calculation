@@ -15,6 +15,27 @@
         src: ../dist/ui.tar.xz
         dest: /var/www/html
 
+    - name: Create network
+      community.docker.docker_network:
+        name: duels_net
+
+    - name: Pull MongoDB
+      community.docker.docker_image:
+        name: mongo
+        tag: latest
+        source: pull
+        force_source: true
+
+    - name: Run MongoDB
+      community.docker.docker_container:
+        image: mongo
+        name: mongo
+        published_ports: 27017:27017
+        restart: true
+        restart_policy: unless-stopped
+        networks:
+          - name: duels_net
+
     - name: Pull the backend
       community.docker.docker_image:
         name: europe-central2-docker.pkg.dev/duelscalculator/duels-all/backend
@@ -29,3 +50,7 @@
         published_ports: 8080:80
         restart: true
         restart_policy: "unless-stopped"
+        networks:
+          - name: duels_net
+        env:
+          MONGO_URL: mongodb://mongo:27017

@@ -20,4 +20,4 @@ build_frontend:
 .PHONY: deploy
 #deploy:
 deploy: build
-	ansible-playbook -i ops/inventory.yml ops/playbook.yml
+	CLOUDSDK_PYTHON=/Users/seth/.pyenv/shims/python ansible-playbook -i ops/inventory.yml ops/playbook.yml
