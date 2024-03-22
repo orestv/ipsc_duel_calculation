@@ -117,11 +117,20 @@ class MatchRepository:
                 outcomes = list(sorted(outcomes, key=lambda o: o.created_at))
                 last_outcome = outcomes[-1]
 
+                if last_outcome.dq:
+                    if last_outcome.dq.left:
+                        participants[duel.left].dq = True
+                    if last_outcome.dq.right:
+                        participants[duel.right].dq = True
+
                 if last_outcome.victory.left:
                     participants[duel.left].victories += 1
                 if last_outcome.victory.right:
                     participants[duel.right].victories += 1
 
-                # todo: record DQ
+        result = list(participants.values())
+        for p in result:
+            if p.dq:
+                p.victories = 0
 
-        return list(participants.values())
+        return result

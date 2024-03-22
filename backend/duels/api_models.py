@@ -87,4 +87,5 @@ class MatchOutcomes(pydantic.BaseModel):
 
 class ParticipantVictories(pydantic.BaseModel):
     participant_id: uuid.UUID
-    victories: int
+    victories: int = 0
+    dq: bool = False
