@@ -45,7 +45,8 @@ module.exports = {
         compress: true,
         watchFiles: ["./src/*"],
         proxy: {
-            '/duels': 'http://localhost:4200'
+            '/duels': 'http://localhost:4200',
+            '/matches': 'http://localhost:4200'
         }
     },
     devtool: 'source-map'
