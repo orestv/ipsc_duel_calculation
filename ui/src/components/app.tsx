@@ -4,6 +4,8 @@ import MatchSetup from "./match_setup";
 import DuelsList from "./duels_list";
 import {EmptyMatchSetupRequest, Match, MatchSetupRequest, RangeSetupRequest} from "../models";
 import {API_ROOT, getMatchSetupFromLocalStorage, saveMatchSetupToLocalStorage} from "../storage";
+import Navbar from "react-bootstrap/Navbar";
+import {Button} from "react-bootstrap";
 
 export default function App() {
     const [matchSetup, setMatchSetup] = useState(EmptyMatchSetupRequest())
@@ -97,20 +99,20 @@ export default function App() {
 
     return (
         <>
-            <nav className="navbar navbar-light bg-light">
+            <Navbar className="bg-body-tertiary">
                 <div className="container-fluid d-flex">
                     <h1>Дуелі</h1>
-                    <button type="button" className="btn btn-primary"
+                    <Button type="button" className="btn-primary"
                             onClick={() => {
                                 setMatchLoaderVisible(true)
                             }}>
                         Додати список з Practicarms
-                    </button>
-                    <button type={"button"} className={"btn btn-outline-danger"}
+                    </Button>
+                    <Button type={"button"} className={"btn btn-outline-danger"}
                             onClick={handleResetMatchClick}>Очистити
-                    </button>
+                    </Button>
                 </div>
-            </nav>
+            </Navbar>
             <div className="container-fluid my-4">
                 <MatchLoader visible={isMatchLoaderVisible} onMatchLoaded={handleMatchLoaded}
                              onCanceled={handleMatchLoaderCanceled}/>

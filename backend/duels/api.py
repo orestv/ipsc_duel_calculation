@@ -82,6 +82,10 @@ class MatchController(litestar.Controller):
     async def create_match(self, data: MatchCreate, match_service: MatchService) -> uuid.UUID:
         return await match_service.create_match(data)
 
+    @litestar.get()
+    async def get_matches(self, match_service: MatchService) -> list[MatchInProgress]:
+        return await match_service.get_all_matches()
+
     @litestar.get("/{match_id:uuid}")
     async def get_match(self, match_id: uuid.UUID, match_service: MatchService) -> MatchInProgress:
         try:
@@ -122,5 +126,5 @@ base_router = litestar.Router(
 app = litestar.Litestar(
     route_handlers=[base_router, ],
     # cors_config=CORSConfig(allow_origins=["http://localhost:4000"]),
-    # exception_handlers={Exception: logging_exception_handler},
+    exception_handlers={Exception: logging_exception_handler},
 )

@@ -24,7 +24,8 @@ class MongoMatchRepository(MatchRepository):
         return match.id
 
     async def get_matches(self) -> list[MatchInProgress]:
-        return await self.matches.find()
+        docs = self.matches.find()
+        return [MatchInProgress.parse_obj(doc) async for doc in docs]
 
     async def delete_match(self, match_id: uuid.UUID) -> None:
         return await self.matches.delete_one({"id": match_id})

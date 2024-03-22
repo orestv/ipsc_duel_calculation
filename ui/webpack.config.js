@@ -42,6 +42,9 @@ module.exports = {
     devServer: {
         static: path.join(__dirname, "dist"),
         port: 4000,
+        historyApiFallback: {
+          index: 'index.html'
+        },
         compress: true,
         watchFiles: ["./src/*"],
         proxy: {

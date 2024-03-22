@@ -79,6 +79,7 @@ class MatchInProgress(pydantic.BaseModel):
     participants: list[MatchParticipant]
     participants_by_range: dict[duels.model.Range, list[uuid.UUID]]
     duels: dict[duels.model.Range, list[MatchDuel]]
+    created_at: typing.Optional[datetime.datetime] = None
 
 
 class MatchOutcomes(pydantic.BaseModel):

@@ -65,6 +65,7 @@ class MatchService:
             participants=participants,
             participants_by_range=participants_by_range,
             duels=match_duels,
+            created_at=datetime.datetime.now(),
         )
         match_id = await self.repository.add_match(match)
         return match_id
