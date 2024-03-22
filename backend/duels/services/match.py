@@ -80,8 +80,8 @@ class MatchService:
     async def get_all_matches(self) -> list[MatchInProgress]:
         return await self.repository.get_matches()
 
-    def delete_match(self, match_id: uuid.UUID) -> None:
-        self.repository.delete_match(match_id)
+    async def delete_match(self, match_id: uuid.UUID) -> None:
+        await self.repository.delete_match(match_id)
 
     async def get_match(self, match_id: uuid.UUID) -> MatchInProgress:
         try:

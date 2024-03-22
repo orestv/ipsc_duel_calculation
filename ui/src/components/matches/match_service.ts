@@ -19,3 +19,11 @@ export async function fetchMatches(): Promise<MatchInProgress[]> {
     jsonWithDates.sort((a: MatchInProgress, b: MatchInProgress) => {a.created_at < b.created_at}).reverse()
     return jsonWithDates
 }
+
+export async function deleteMatch(matchId: string) {
+    await fetch(
+        `${API_ROOT}/matches/${matchId}`, {
+            method: "DELETE"
+        }
+    )
+}

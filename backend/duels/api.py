@@ -93,6 +93,10 @@ class MatchController(litestar.Controller):
         except KeyError:
             raise NotFoundException()
 
+    @litestar.delete("/{match_id:uuid}")
+    async def delete_match(self, match_id: uuid.UUID, match_service: MatchService) -> None:
+        await match_service.delete_match(match_id)
+
     @litestar.post("/{match_id:uuid}/duels/{duel_id:uuid}/outcomes")
     async def record_outcome(self, match_id: uuid.UUID, duel_id: uuid.UUID, data: DuelOutcome,
                              match_service: MatchService) -> None:
