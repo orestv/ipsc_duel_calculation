@@ -1,12 +1,11 @@
 import React, {useEffect, useState} from "react";
-import {Link, useLoaderData} from "react-router-dom";
-import {API_ROOT} from "../../storage";
-import {MatchInProgress, MatchOutcomes, Participant} from "../models";
-import Nav from "react-bootstrap/Nav";
+import {useLoaderData} from "react-router-dom";
+import {MatchInProgress, Participant} from "./models";
 import Navbar from "react-bootstrap/Navbar";
 import Container from "react-bootstrap/Container";
-import {Button, Col, Row} from "react-bootstrap";
+import {Button, Row} from "react-bootstrap";
 import DuelList from "./duel_list";
+import {fetchMatchInProgress} from "./match_service";
 
 export async function loader({params}: any) {
     return <>
@@ -15,22 +14,6 @@ export async function loader({params}: any) {
 }
 
 export const MatchOutcomesComponent = () => useLoaderData() as JSX.Element
-
-async function getMatchInProgress(matchId: string): Promise<MatchInProgress> {
-    const response = await fetch(
-        `${API_ROOT}/matches/${matchId}`
-    )
-    const matchInProgress = JSON.parse(await response.text())
-    return matchInProgress
-}
-
-async function getMatchOutcomes(matchId: string): Promise<MatchOutcomes> {
-    const response = await fetch(
-        `${API_ROOT}/matches/${matchId}/outcomes`
-    )
-    const matchOutcomes = JSON.parse(await response.text())
-    return matchOutcomes
-}
 
 
 interface MatchRefereeParams {
@@ -54,7 +37,7 @@ export function MatchReferee(params: MatchRefereeParams) {
     const [match, setMatch] = useState(defaultMatch())
     useEffect(() => {
         (async () => {
-            setMatch(await getMatchInProgress(params.matchId))
+            setMatch(await fetchMatchInProgress(params.matchId))
         })()
     }, []);
 
@@ -74,8 +57,6 @@ export function MatchReferee(params: MatchRefereeParams) {
                 </Button>
         )
     }
-
-    console.log(match.duels)
 
     return <>
         <h1>Матч "{match.name}"</h1>

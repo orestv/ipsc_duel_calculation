@@ -1,6 +1,6 @@
 import {API_ROOT} from "../../storage";
 
-import {MatchInProgress} from "../models";
+import {MatchInProgress, MatchOutcomes} from "./models";
 
 export async function fetchMatches(): Promise<MatchInProgress[]> {
     const response = await fetch(
@@ -27,4 +27,20 @@ export async function deleteMatch(matchId: string) {
             method: "DELETE"
         }
     )
+}
+
+export async function fetchMatchInProgress(matchId: string): Promise<MatchInProgress> {
+    const response = await fetch(
+        `${API_ROOT}/matches/${matchId}`
+    )
+    const matchInProgress = JSON.parse(await response.text())
+    return matchInProgress
+}
+
+async function fetchMatchOutcomes(matchId: string): Promise<MatchOutcomes> {
+    const response = await fetch(
+        `${API_ROOT}/matches/${matchId}/outcomes`
+    )
+    const matchOutcomes = JSON.parse(await response.text())
+    return matchOutcomes
 }
