@@ -89,6 +89,7 @@ export function MatchReferee(params: MatchRefereeParams) {
                     range={selectedRange}
                     participants={getParticipantDictionary(match.participants)}
                     duels={match.duels[selectedRange] ?? []}
+                    outcomes={outcomes.outcomes}
                     onOutcomeRecorded={handleOutcomeRecorded}
                 />
             </Row>

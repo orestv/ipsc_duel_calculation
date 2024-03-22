@@ -11,12 +11,11 @@ export interface DuelListParams {
     range: number
     participants: { [key: string]: Participant }
     duels: MatchDuel[]
+    outcomes: { [key: string]: DuelOutcome[] }
     onOutcomeRecorded: () => void
 }
 
 export default function DuelList(params: DuelListParams) {
-    // const duelRows = []
-    // const duels = match.duels["1"]
     const duels = params.duels
     duels.sort((a, b) => {
         return a.order - b.order
@@ -36,8 +35,24 @@ export default function DuelList(params: DuelListParams) {
         params.onOutcomeRecorded()
     }
 
+    const mostRecentOutcomes: {[key: string]: DuelOutcome} = {}
+    for (const duelId of Object.keys(params.outcomes)) {
+        const o = params.outcomes[duelId]
+        const last = o.reduce(
+            (max, obj) => max.created_at > obj.created_at ? max : obj
+        )
+        mostRecentOutcomes[duelId] = last
+    }
+
+    const participantName = (pName: string, victory: boolean) => {
+        return <p style={{fontWeight: victory ? "bold" : "normal"}}>{pName}</p>
+    }
+
     const duelRows = []
     for (const duel of duels) {
+        const outcome = mostRecentOutcomes[duel.id] ?? undefined
+        const victoryLeft = outcome?.victory.left ?? false
+        const victoryRight = outcome?.victory.right ?? false
         duelRows.push(
             <tr key={duel.id}>
                 <td>{duel.order}</td>
@@ -46,15 +61,18 @@ export default function DuelList(params: DuelListParams) {
                         className={'m-1'}
                         onClick={buildOutcomeHandler(duel.id, {left: true, right: false})}
                     ><FaGun/></Button>
-                    {params.participants[duel.left].name}
+                    {participantName(params.participants[duel.left].name, victoryLeft)}
+                    {/*{params.participants[duel.left].name}*/}
                 </td>
                 <td>
                     <Button
                         className={'m-1'}
                         onClick={buildOutcomeHandler(duel.id, {left: false, right: true})}
                     ><FaGun/></Button>
-                    {params.participants[duel.right].name}
+                    {participantName(params.participants[duel.right].name, victoryRight)}
+                    {/*{params.participants[duel.right].name}*/}
                 </td>
+                <td>{outcome?.created_at.toLocaleString() ?? ''}</td>
             </tr>
         )
     }
