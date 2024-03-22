@@ -75,5 +75,8 @@ class MatchRepository:
     def get_all_matches(self) -> list[MatchInProgress]:
         return [self.matches.values()]
 
+    def delete_match(self, match_id: uuid.UUID) -> None:
+        del self.matches[match_id]
+
     def get_match(self, match_id: uuid.UUID) -> MatchInProgress:
         return self.matches[match_id]
