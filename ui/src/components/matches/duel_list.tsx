@@ -64,43 +64,9 @@ export default function DuelList(params: DuelListParams) {
         )
     }
 
-    // for (const duel of duels) {
-    //     const outcome = mostRecentOutcomes[duel.id] ?? undefined
-    //     const victoryLeft = outcome?.victory.left ?? false
-    //     const victoryRight = outcome?.victory.right ?? false
-    //     duelRows.push(
-    //         <tr key={duel.id}>
-    //             <td>{duel.order}</td>
-    //             <td>
-    //                 <Button
-    //                     className={'m-1'}
-    //                     onClick={buildOutcomeHandler(duel.id, {left: true, right: false})}
-    //                 ><FaGun/></Button>
-    //                 {participantName(params.participants[duel.left].name, victoryLeft)}
-    //             </td>
-    //             <td>
-    //                 <Button
-    //                     className={'m-1'}
-    //                     onClick={buildOutcomeHandler(duel.id, {left: false, right: true})}
-    //                 ><FaGun/></Button>
-    //                 {participantName(params.participants[duel.right].name, victoryRight)}
-    //             </td>
-    //             <td>{new Date(outcome?.created_at)?.toLocaleTimeString('uk-UA', {hour12: false}) ?? ''}</td>
-    //         </tr>
-    //     )
-    // }
-
     return (
         <Container>
             {duelRows}
-            {/*<Table>*/}
-            {/*    <thead>*/}
-
-            {/*    </thead>*/}
-            {/*    <tbody>*/}
-            {/*        {duelRows}*/}
-            {/*    </tbody>*/}
-            {/*</Table>*/}
         </Container>
     )
 }

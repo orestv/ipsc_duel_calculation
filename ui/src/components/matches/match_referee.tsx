@@ -1,11 +1,11 @@
 import React, {useEffect, useState} from "react";
-import {useLoaderData} from "react-router-dom";
-import {MatchInProgress, MatchOutcomes, Participant} from "./models";
+import {Link, useLoaderData} from "react-router-dom";
+import {MatchInProgress, MatchOutcomes} from "./models";
 import Navbar from "react-bootstrap/Navbar";
 import Container from "react-bootstrap/Container";
 import {Button, Row} from "react-bootstrap";
 import DuelList from "./duel_list";
-import {fetchMatchInProgress, fetchMatchOutcomes} from "./match_service";
+import {fetchMatchInProgress, fetchMatchOutcomes, getParticipantDictionary} from "./match_service";
 import ProgressCounter from "./progress_counter";
 
 export async function loader({params}: any) {
@@ -14,21 +14,11 @@ export async function loader({params}: any) {
     </>
 }
 
-export const MatchOutcomesComponent = () => useLoaderData() as JSX.Element
+export const MatchOutcomesComponent = () => useLoaderData() as React.JSX.Element
 
 
 interface MatchRefereeParams {
     matchId: string
-}
-
-function getParticipantDictionary(participants: Participant[]): {[key: string]:Participant} {
-    return participants.reduce(
-        (obj, participant) => {
-            obj[participant.id] = participant
-            return obj
-        },
-        {} as {[key: string]: Participant}
-    )
 }
 
 export function MatchReferee(params: MatchRefereeParams) {
@@ -86,6 +76,11 @@ export function MatchReferee(params: MatchRefereeParams) {
     return <>
         <h1>Матч "{match.name}" <ProgressCounter total={totalDuels} completed={completedDuels}/></h1>
         <Navbar>
+            <Container>
+                <Link to={`/matches/${params.matchId}/results`}>
+                    <Button>Результати</Button>
+                </Link>
+            </Container>
             <Container>
                 {rangeButtons}
             </Container>

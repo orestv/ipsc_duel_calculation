@@ -1,6 +1,6 @@
 import {API_ROOT} from "../../storage";
 
-import {DuelOutcome, MatchInProgress, MatchOutcomes} from "./models";
+import {DuelOutcome, MatchInProgress, MatchOutcomes, Participant} from "./models";
 
 export async function fetchMatches(): Promise<MatchInProgress[]> {
     const response = await fetch(
@@ -51,5 +51,15 @@ export async function recordOutcome(matchId: string, outcome: DuelOutcome) {
             method: "POST",
             body: JSON.stringify(outcome),
         }
+    )
+}
+
+export function getParticipantDictionary(participants: Participant[]): { [key: string]: Participant } {
+    return participants.reduce(
+        (obj, participant) => {
+            obj[participant.id] = participant
+            return obj
+        },
+        {} as { [key: string]: Participant }
     )
 }
