@@ -4,9 +4,9 @@ import {
     Accordion, AccordionItem, Alert,
     Button,
     ButtonGroup,
-    Card,
+    Card, Col,
     Form, InputGroup,
-    Modal,
+    Modal, Row,
     Stack,
     ToggleButton,
     ToggleButtonGroup
@@ -97,7 +97,7 @@ export default function DuelCard(params: DuelCardParams) {
             }}>Перезаписати</Button>
         )
     }
-    const defaultShowModal= false
+    const defaultShowModal = false
     const [showModal, setShowModal] = useState(defaultShowModal)
     const handleClose = async (victory?: DuelVictory, dq?: DuelDQ) => {
         if (victory != null || dq != null) {
@@ -237,44 +237,48 @@ function OutcomeModal(params: OutcomeModalParams) {
 
     return (
         <Modal show={params.show} onHide={handleHide}>
-            <Modal.Header closeButton className='d-flex justify-content-between'>
+            <Modal.Header closeButton>
                 <Modal.Title><b>{params.leftName}</b> vs <b>{params.rightName}</b></Modal.Title>
             </Modal.Header>
-            <Modal.Body className='d-flex justify-content-between'>
+            <Modal.Body>
                 <OutcomeRender outcome={params.outcome} leftName={params.leftName} rightName={params.rightName}/>
             </Modal.Body>
-            <Modal.Footer className='d-flex justify-content-between'>
-                <Form onSubmit={handleSubmit} >
-                    <Form.Group className={"mb-3"} >
+            <Modal.Footer className={" d-flex justify-content-between"}>
+                <Form onSubmit={handleSubmit}>
+                    <Form.Group className={"mb-3"}>
                         <ToggleButtonGroup
                             name={"victory"}
                             type={"radio"}
                             value={victory}
+                            size={"lg"}
                             onChange={handleVictoryChanged}
                         >
                             <ToggleButton
                                 id={"win-left"}
                                 value={"left"}
-                                variant={"outline-primary"}
+                                variant={"outline-success"}
                                 disabled={dq.includes("left")}
                                 checked={victory == Victory.Left}
                             >Перемога зліва</ToggleButton>
                             <ToggleButton
                                 id={"win-none"}
                                 value={"none"}
-                                variant={"outline-primary"}
+                                variant={"outline-danger"}
                                 checked={victory == Victory.None}
                             >Дві поразки</ToggleButton>
                             <ToggleButton
                                 id={"win-right"}
                                 value={"right"}
-                                variant={"outline-primary"}
+                                variant={"outline-success"}
                                 disabled={dq.includes("right")}
                                 checked={victory == Victory.Right}
                             >Перемога справа</ToggleButton>
                         </ToggleButtonGroup>
                     </Form.Group>
-                    <Accordion defaultActiveKey={dq.length > 0 ? "0" : null}>
+                    <Accordion
+                        defaultActiveKey={dq.length > 0 ? "0" : null}
+                        className={"mt-5"}
+                    >
                         <AccordionItem eventKey={"0"}>
                             <Accordion.Header>DQ</Accordion.Header>
                             <Accordion.Body>
@@ -283,6 +287,7 @@ function OutcomeModal(params: OutcomeModalParams) {
                                         name={"dq"}
                                         type={"checkbox"}
                                         defaultValue={dq}
+                                        size={"lg"}
                                         className='d-flex justify-content-between'
                                         onChange={handleDQChanged}
                                     >
@@ -303,7 +308,7 @@ function OutcomeModal(params: OutcomeModalParams) {
                             </Accordion.Body>
                         </AccordionItem>
                     </Accordion>
-                    <Container className={"mt-3 d-flex justify-content-between"}>
+                    <Container className={"mt-5 d-flex justify-content-between"}>
                         <Button size={"lg"} variant={"outline-dark"} onClick={handleHide}>Закрити</Button>
                         <Button size={"lg"} disabled={!canSubmit} type={"submit"}>Зберегти результат</Button>
                     </Container>
