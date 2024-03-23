@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from "react";
-import {Link, useLoaderData} from "react-router-dom";
+import {useLoaderData} from "react-router-dom";
 import {MatchInProgress, MatchOutcomes} from "./models";
 import Navbar from "react-bootstrap/Navbar";
 import Container from "react-bootstrap/Container";
@@ -7,6 +7,7 @@ import {Button, Row} from "react-bootstrap";
 import DuelList from "./duel_list";
 import {fetchMatchInProgress, fetchMatchOutcomes, getParticipantDictionary} from "./match_service";
 import ProgressCounter from "./progress_counter";
+import {MatchResultsModal} from "./match_results";
 
 export async function loader({params}: any) {
     return <>
@@ -73,13 +74,17 @@ export function MatchReferee(params: MatchRefereeParams) {
         (val) => {return rangeDuelIDs.includes(val)}
     ).length
 
+    const [showResults, setShowResults] = useState(false)
+
     return <>
         <h1>Матч "{match.name}" <ProgressCounter total={totalDuels} completed={completedDuels}/></h1>
         <Navbar>
             <Container>
-                <Link to={`/matches/${params.matchId}/results`}>
-                    <Button>Результати</Button>
-                </Link>
+                {/*<Link to={`/matches/${params.matchId}/results`}>*/}
+                    <Button onClick={() => {
+                        setShowResults(true)
+                    }}>Результати</Button>
+                {/*</Link>*/}
             </Container>
             <Container>
                 {rangeButtons}
@@ -90,12 +95,12 @@ export function MatchReferee(params: MatchRefereeParams) {
                 <DuelList
                     matchId={params.matchId}
                     range={selectedRange}
-                    participants={getParticipantDictionary(match.participants)}
                     duels={match.duels[selectedRange] ?? []}
-                    outcomes={outcomes.outcomes}
+                    outcomes={outcomes}
                     onOutcomeRecorded={handleOutcomeRecorded}
                 />
             </Row>
         </Container>
+        <MatchResultsModal match={match} outcomes={outcomes} show={showResults} onHide={() => {setShowResults(false)}}/>
     </>
 }

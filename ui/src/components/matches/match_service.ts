@@ -33,7 +33,14 @@ export async function fetchMatchInProgress(matchId: string): Promise<MatchInProg
     const response = await fetch(
         `${API_ROOT}/matches/${matchId}`
     )
-    const matchInProgress = JSON.parse(await response.text())
+    const matchInProgress: MatchInProgress = JSON.parse(await response.text())
+    const participantDictionary = getParticipantDictionary(matchInProgress.participants)
+    for (const rng of Object.keys(matchInProgress.duels).map(Number)) {
+        for (const duel of matchInProgress.duels[rng]) {
+            duel.leftName = participantDictionary[duel.left].name
+            duel.rightName = participantDictionary[duel.right].name
+        }
+    }
     return matchInProgress
 }
 
@@ -62,4 +69,16 @@ export function getParticipantDictionary(participants: Participant[]): { [key: s
         },
         {} as { [key: string]: Participant }
     )
+}
+
+export function getMostRecentOutcomes(outcomes: MatchOutcomes) {
+    const mostRecentOutcomes: { [key: string]: DuelOutcome } = {}
+    for (const duelId of Object.keys(outcomes.outcomes)) {
+        const o = outcomes.outcomes[duelId]
+        const last = o.reduce(
+            (max, obj) => max.created_at > obj.created_at ? max : obj
+        )
+        mostRecentOutcomes[duelId] = last
+    }
+    return mostRecentOutcomes;
 }

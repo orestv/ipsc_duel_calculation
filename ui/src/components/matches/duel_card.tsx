@@ -1,14 +1,12 @@
 import React, {useState} from "react";
-import {DuelDQ, DuelOutcome, DuelVictory, MatchDuel, Participant} from "./models";
-import {Button, Card, Col, Modal, Row} from "react-bootstrap";
-import Container from "react-bootstrap/Container";
+import {DuelDQ, DuelOutcome, DuelVictory, MatchDuel} from "./models";
+import {Button, Card, Modal} from "react-bootstrap";
 import {recordOutcome} from "./match_service";
 
 export interface DuelCardParams {
     matchId: string,
     duel: MatchDuel
     outcome?: DuelOutcome
-    participants: { [key: string]: Participant }
     onOutcomeRecorded: () => void
 }
 
@@ -39,8 +37,8 @@ function getVictoryState(outcome: boolean, win: boolean, dq: boolean): Participa
 }
 
 export default function DuelCard(params: DuelCardParams) {
-    const participantLeft = params.participants[params.duel.left].name
-    const participantRight = params.participants[params.duel.right].name
+    const participantLeft = params.duel.leftName
+    const participantRight = params.duel.rightName
     const victoryState: VictoryState = {
         left: getVictoryState(params.outcome != undefined, params.outcome?.victory?.left, params.outcome?.dq?.left),
         right: getVictoryState(params.outcome != undefined, params.outcome?.victory?.right, params.outcome?.dq?.right),

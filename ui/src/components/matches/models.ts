@@ -16,7 +16,9 @@ export interface MatchDuel {
     id: string
     order: number
     left: string
+    leftName: string
     right: string
+    rightName: string
     clazz: string
 }
 
