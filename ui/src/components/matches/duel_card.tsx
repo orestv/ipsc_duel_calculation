@@ -216,7 +216,7 @@ function OutcomeModal(params: OutcomeModalParams) {
             newJudgement.dq = {left: dq.includes("left"), right: dq.includes("right")}
         }
         setJudgement(newJudgement)
-        setCanSubmit(Object.keys(newJudgement).length > 0)
+        setCanSubmit(newJudgement.victory != null)
     }, [victory, dq]);
     const handleSubmit = (event: any) => {
         event.preventDefault()

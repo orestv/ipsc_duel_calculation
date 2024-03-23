@@ -84,7 +84,6 @@ export function MatchReferee(params: MatchRefereeParams) {
         }
     )
     const getNextDuel = (): number => {
-        console.log(outcomes.outcomes)
         for (const duel of match.duels[selectedRange] ?? []) {
             if (!(duel.id in outcomes.outcomes)) {
                 return duel.order
