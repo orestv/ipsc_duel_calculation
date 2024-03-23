@@ -1,6 +1,6 @@
 import React, {useState} from "react";
 import {DuelDQ, DuelOutcome, DuelVictory, MatchDuel} from "./models";
-import {Button, Card, Modal} from "react-bootstrap";
+import {Button, ButtonGroup, Card, Modal} from "react-bootstrap";
 import {recordOutcome} from "./match_service";
 
 export interface DuelCardParams {
@@ -137,6 +137,9 @@ function OutcomeModal(params: OutcomeModalParams) {
                 <OutcomeRender outcome={params.outcome} leftName={params.leftName} rightName={params.rightName}/>
             </Modal.Body>
             <Modal.Footer className='d-flex justify-content-between'>
+                <ButtonGroup>
+
+                </ButtonGroup>
                 <Button variant="primary" onClick={() => params.handleClose({left: true, right: false})}>Перемога зліва</Button>
                 <Button variant="primary" onClick={() => params.handleClose({left: false, right: true})}>Перемога справа</Button>
             </Modal.Footer>

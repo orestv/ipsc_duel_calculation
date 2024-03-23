@@ -3,7 +3,7 @@ import {useLoaderData} from "react-router-dom";
 import {MatchInProgress, MatchOutcomes} from "./models";
 import Navbar from "react-bootstrap/Navbar";
 import Container from "react-bootstrap/Container";
-import {Button, Row} from "react-bootstrap";
+import {Button, ButtonGroup, Row, Stack, ToggleButton} from "react-bootstrap";
 import DuelList from "./duel_list";
 import {fetchMatchInProgress, fetchMatchOutcomes, getMatchCompletion, getRangeCompletion} from "./match_service";
 import ProgressCounter from "./progress_counter";
@@ -63,15 +63,15 @@ export function MatchReferee(params: MatchRefereeParams) {
     const rangeButtons = []
     for (const r of ranges) {
         rangeButtons.push(
-            <Button variant={"secondary"} size={"lg"}
-                    active={r == selectedRange}
-                    key={r}
-                    onClick={() => {
-                        setSelectedRange(r)
-                    }}
-            >
+            <ToggleButton
+                variant={"outline-primary"}
+                type={"radio"}
+                checked={selectedRange == r}
+                onChange={(e) => {setSelectedRange(Number(e.currentTarget.value))}}
+                key={r}
+                id={`range-${r}`} value={r}>
                 Рубіж {r}
-            </Button>
+            </ToggleButton>
         )
     }
 
@@ -84,7 +84,15 @@ export function MatchReferee(params: MatchRefereeParams) {
     const [showResults, setShowResults] = useState(false)
 
     return <>
-        <h1>Матч "{match.name}" <ProgressCounter status={matchCompletionStatus}/></h1>
+        <h1>
+            <Stack direction={"horizontal"} gap={1}>
+                Матч "{match.name}"
+                <ProgressCounter status={matchCompletionStatus}/>
+                <ButtonGroup>
+                    {rangeButtons}
+                </ButtonGroup>
+            </Stack>
+        </h1>
         <Navbar>
             <Container>
                 {/*<Link to={`/matches/${params.matchId}/results`}>*/}
@@ -94,7 +102,7 @@ export function MatchReferee(params: MatchRefereeParams) {
                 {/*</Link>*/}
             </Container>
             <Container>
-                {rangeButtons}
+
             </Container>
         </Navbar>
         <Container fluid>

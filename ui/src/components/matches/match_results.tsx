@@ -60,7 +60,7 @@ export function MatchResultsModal(params: MatchResultsModalParams) {
             }
             setVictories(result)
         })()
-    }, [params.match.id, params.outcomes]);
+    }, [params.outcomes]);
 
     const RANGES = Object.keys(params.match.duels).map(Number)
 
