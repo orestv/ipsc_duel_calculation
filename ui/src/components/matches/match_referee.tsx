@@ -5,7 +5,7 @@ import Navbar from "react-bootstrap/Navbar";
 import Container from "react-bootstrap/Container";
 import {Button, Row} from "react-bootstrap";
 import DuelList from "./duel_list";
-import {fetchMatchInProgress, fetchMatchOutcomes, getParticipantDictionary} from "./match_service";
+import {fetchMatchInProgress, fetchMatchOutcomes} from "./match_service";
 import ProgressCounter from "./progress_counter";
 import {MatchResultsModal} from "./match_results";
 
@@ -24,7 +24,15 @@ interface MatchRefereeParams {
 
 export function MatchReferee(params: MatchRefereeParams) {
     const defaultMatch = (): MatchInProgress => {
-        return {created_at: undefined, duels: {}, id: "", name: "", participants: [], participantsDict: {}}
+        return {
+            created_at: undefined,
+            duels: {},
+            id: "",
+            name: "",
+            participants: [],
+            participants_by_range: {},
+            participantsDict: {}
+        }
     }
     const [match, setMatch] = useState(defaultMatch())
     useEffect(() => {

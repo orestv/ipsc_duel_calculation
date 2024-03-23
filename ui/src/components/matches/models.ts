@@ -2,7 +2,8 @@ export interface MatchInProgress {
     id: string
     name: string
     participants: Participant[]
-    participantsDict: {[key: string]: Participant}
+    participantsDict: { [key: string]: Participant }
+    participants_by_range: { [key: number]: string[] }
     duels: { [key: number]: MatchDuel[] }
     created_at: Date
 }
