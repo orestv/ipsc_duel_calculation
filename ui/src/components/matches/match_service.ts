@@ -1,6 +1,13 @@
 import {API_ROOT} from "../../storage";
 
-import {DuelOutcome, MatchInProgress, MatchOutcomes, Participant, ParticipantVictories} from "./models";
+import {
+    CompletionStatus,
+    DuelOutcome, MatchDuel,
+    MatchInProgress,
+    MatchOutcomes,
+    Participant,
+    ParticipantVictories
+} from "./models";
 
 export async function fetchMatches(): Promise<MatchInProgress[]> {
     const response = await fetch(
@@ -67,6 +74,53 @@ export async function recordOutcome(matchId: string, outcome: DuelOutcome) {
             body: JSON.stringify(outcome),
         }
     )
+}
+
+export interface CompletionFilter {
+    range?: number
+    clazz?: string
+}
+
+export function getMatchCompletion(match: MatchInProgress, outcomes: MatchOutcomes, filter?: CompletionFilter): CompletionStatus {
+    let rangeDuels: MatchDuel[] = []
+    if (filter?.range) {
+        rangeDuels = match.duels[filter.range] ?? []
+    } else {
+        for (const range of Object.keys(match.duels).map(Number)) {
+            rangeDuels.push(...(match.duels[range] ?? []))
+        }
+    }
+
+
+    if (filter?.clazz) {
+        rangeDuels = rangeDuels.filter(
+            (d) => {
+                return d.clazz == filter.clazz
+            }
+        )
+    }
+
+    return getCompletionRate(
+        rangeDuels,
+        outcomes,
+    )
+}
+
+export function getRangeCompletion(match: MatchInProgress, outcomes: MatchOutcomes, range: number): CompletionStatus {
+    const duels = match.duels[range] ?? []
+    return getCompletionRate(duels, outcomes)
+}
+
+function getCompletionRate(duels: MatchDuel[], outcomes: MatchOutcomes) {
+    const duelIDs = duels.map((d) => {return d.id})
+    const totalDuels = duels.length
+    const completedDuels = Object.keys(outcomes.outcomes).filter(
+        (val) => {return duelIDs.includes(val)}
+    ).length
+    return {
+        completed: completedDuels,
+        total: totalDuels
+    }
 }
 
 function getParticipantDictionary(participants: Participant[]): { [key: string]: Participant } {

@@ -1,11 +1,11 @@
 import React, {useEffect, useState} from "react";
 import Container from "react-bootstrap/Container";
 import {Button, Table} from "react-bootstrap";
-import {deleteMatch, fetchMatches} from "./match_service";
-import {FaDeleteLeft} from "react-icons/fa6";
+import {deleteMatch, fetchMatches, fetchMatchOutcomes, getMatchCompletion} from "./match_service";
 import {FaPlay, FaTrash} from "react-icons/fa";
 import {Link} from "react-router-dom";
-import {MatchInProgress} from "./models";
+import {CompletionStatus, MatchInProgress} from "./models";
+import ProgressCounter from "./progress_counter";
 
 export default function MatchList() {
     const emptyMatches: MatchInProgress[] = []
@@ -17,6 +17,18 @@ export default function MatchList() {
             setMatches(matches)
         })()
     }, []);
+
+    const emptyStatuses: {[key: string]: CompletionStatus} = {}
+    const [statuses, setStatuses] = useState(emptyStatuses)
+    useEffect(() => {
+        (async () => {
+            for (const match of matches) {
+                const fetchedOutcomes = await fetchMatchOutcomes(match.id)
+                statuses[match.id] = getMatchCompletion(match, fetchedOutcomes)
+                setStatuses({...statuses})
+            }
+        })()
+    }, [matches]);
 
     const buildMatchDeleteClickHandler = (matchId: string) => {
         return async (e: any) => {
@@ -34,7 +46,7 @@ export default function MatchList() {
                 <td>{match.id}</td>
                 <td>{match.name}</td>
                 <td>{createdAt}</td>
-                <td></td>
+                <td><ProgressCounter status={statuses[match.id]}/></td>
                 <td>
                     <Link className="m-1" to={`/matches/${match.id}`}>
                         <Button><FaPlay/></Button>

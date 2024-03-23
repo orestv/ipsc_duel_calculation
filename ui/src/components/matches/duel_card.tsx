@@ -72,7 +72,7 @@ export default function DuelCard(params: DuelCardParams) {
     const duelActions = (outcome?: DuelOutcome) => {
         if (outcome == undefined) {
             return (
-                <Button variant='primary' onClick={() => {
+                <Button variant='outline-primary' onClick={() => {
                     setShowModal(true)
                 }}>Судити</Button>
             )

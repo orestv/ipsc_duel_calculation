@@ -50,3 +50,8 @@ export interface ParticipantVictories {
     victories: number
     dq: boolean
 }
+
+export interface CompletionStatus {
+    total: number
+    completed: number
+}

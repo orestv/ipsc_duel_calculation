@@ -5,9 +5,10 @@ import Navbar from "react-bootstrap/Navbar";
 import Container from "react-bootstrap/Container";
 import {Button, Modal, Table} from "react-bootstrap";
 import {FaArrowLeft} from "react-icons/fa";
-import {MatchInProgress, MatchOutcomes, Participant, ParticipantVictories} from "./models";
-import {fetchParticipantVictories} from "./match_service";
+import {CompletionStatus, MatchInProgress, MatchOutcomes, Participant, ParticipantVictories} from "./models";
+import {fetchParticipantVictories, getMatchCompletion} from "./match_service";
 import {CLASSES} from "../../models";
+import ProgressCounter from "./progress_counter";
 
 export async function loader({params}: any) {
     return <>
@@ -95,8 +96,18 @@ export function MatchResultsModal(params: MatchResultsModalParams) {
             if (classRangeVictories.length == 0) {
                 continue
             }
+            const status = getMatchCompletion(
+                params.match, params.outcomes,
+                {range: range, clazz: clazz}
+            )
             victoriesRows.push(
-                <RangeClassResults clazz={clazz} range={range} victories={classRangeVictories}/>
+                <RangeClassResults
+                    key={ clazz + range }
+                    clazz={clazz}
+                    range={range}
+                    victories={classRangeVictories}
+                    status={status}
+                />
             )
         }
     }
@@ -119,6 +130,7 @@ interface RangeClassResultsParams {
     clazz: string
     range: number
     victories: RenderedParticipantVictories[]
+    status: CompletionStatus
 }
 
 function RangeClassResults(params: RangeClassResultsParams) {
@@ -143,7 +155,7 @@ function RangeClassResults(params: RangeClassResultsParams) {
     )
     return (
         <>
-            <h2>{params.clazz} - рубіж №{params.range}</h2>
+            <h2>{params.clazz} - рубіж №{params.range} <ProgressCounter status={params.status}/></h2>
             <Table>
                 <thead>
                     {rows}

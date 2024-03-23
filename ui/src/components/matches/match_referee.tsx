@@ -5,7 +5,7 @@ import Navbar from "react-bootstrap/Navbar";
 import Container from "react-bootstrap/Container";
 import {Button, Row} from "react-bootstrap";
 import DuelList from "./duel_list";
-import {fetchMatchInProgress, fetchMatchOutcomes} from "./match_service";
+import {fetchMatchInProgress, fetchMatchOutcomes, getMatchCompletion, getRangeCompletion} from "./match_service";
 import ProgressCounter from "./progress_counter";
 import {MatchResultsModal} from "./match_results";
 
@@ -63,35 +63,34 @@ export function MatchReferee(params: MatchRefereeParams) {
     const rangeButtons = []
     for (const r of ranges) {
         rangeButtons.push(
-                <Button variant={"secondary"} size={"lg"}
-                        active={r == selectedRange}
-                        key={r}
-                        onClick={() => {
-                            setSelectedRange(r)
-                        }}
-                >
-                    Рубіж {r}
-                </Button>
+            <Button variant={"secondary"} size={"lg"}
+                    active={r == selectedRange}
+                    key={r}
+                    onClick={() => {
+                        setSelectedRange(r)
+                    }}
+            >
+                Рубіж {r}
+            </Button>
         )
     }
 
-    const rangeDuels = match.duels[selectedRange] ?? []
-    const rangeDuelIDs = rangeDuels.map((d) => {return d.id})
-    const totalDuels = rangeDuels.length
-    const completedDuels = Object.keys(outcomes.outcomes).filter(
-        (val) => {return rangeDuelIDs.includes(val)}
-    ).length
+    const matchCompletionStatus = getMatchCompletion(
+        match, outcomes, {
+            range: selectedRange
+        }
+    )
 
     const [showResults, setShowResults] = useState(false)
 
     return <>
-        <h1>Матч "{match.name}" <ProgressCounter total={totalDuels} completed={completedDuels}/></h1>
+        <h1>Матч "{match.name}" <ProgressCounter status={matchCompletionStatus}/></h1>
         <Navbar>
             <Container>
                 {/*<Link to={`/matches/${params.matchId}/results`}>*/}
-                    <Button onClick={() => {
-                        setShowResults(true)
-                    }}>Результати</Button>
+                <Button onClick={() => {
+                    setShowResults(true)
+                }}>Результати</Button>
                 {/*</Link>*/}
             </Container>
             <Container>
@@ -109,6 +108,8 @@ export function MatchReferee(params: MatchRefereeParams) {
                 />
             </Row>
         </Container>
-        <MatchResultsModal match={match} outcomes={outcomes} show={showResults} onHide={() => {setShowResults(false)}}/>
+        <MatchResultsModal key={match.id} match={match} outcomes={outcomes} show={showResults} onHide={() => {
+            setShowResults(false)
+        }}/>
     </>
 }

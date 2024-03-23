@@ -102,13 +102,13 @@ export default function App() {
             <Navbar className="bg-body-tertiary">
                 <div className="container-fluid d-flex">
                     <h1>Дуелі</h1>
-                    <Button type="button" className="btn-primary"
+                    <Button variant={"primary"}
                             onClick={() => {
                                 setMatchLoaderVisible(true)
                             }}>
                         Додати список з Practicarms
                     </Button>
-                    <Button type={"button"} className={"btn btn-outline-danger"}
+                    <Button variant={"outline-danger"}
                             onClick={handleResetMatchClick}>Очистити
                     </Button>
                 </div>
