@@ -3,12 +3,11 @@ import React, {useEffect, useState} from "react";
 import {Link, useLoaderData} from "react-router-dom";
 import Navbar from "react-bootstrap/Navbar";
 import Container from "react-bootstrap/Container";
-import {Button, Card, Modal, Table} from "react-bootstrap";
+import {Button, Modal, Table} from "react-bootstrap";
 import {FaArrowLeft} from "react-icons/fa";
-import {DuelOutcome, MatchDuel, MatchInProgress, MatchOutcomes, Participant, ParticipantVictories} from "./models";
+import {MatchInProgress, MatchOutcomes, Participant, ParticipantVictories} from "./models";
 import {fetchParticipantVictories} from "./match_service";
 import {CLASSES} from "../../models";
-import {HiBars3} from "react-icons/hi2";
 
 export async function loader({params}: any) {
     return <>
