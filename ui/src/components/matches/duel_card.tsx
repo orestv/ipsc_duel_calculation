@@ -1,7 +1,20 @@
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
 import {DuelDQ, DuelOutcome, DuelVictory, MatchDuel} from "./models";
-import {Button, ButtonGroup, Card, Modal} from "react-bootstrap";
+import {
+    Accordion, AccordionItem, Alert,
+    Button,
+    ButtonGroup,
+    Card,
+    Form,
+    Modal,
+    Stack,
+    ToggleButton,
+    ToggleButtonGroup
+} from "react-bootstrap";
 import {recordOutcome} from "./match_service";
+import {types} from "sass";
+import Boolean = types.Boolean;
+import Container from "react-bootstrap/Container";
 
 export interface DuelCardParams {
     matchId: string,
@@ -78,10 +91,13 @@ export default function DuelCard(params: DuelCardParams) {
             )
         }
         return (
-            <Button variant={'secondary'} onClick={()=>{setShowModal(true)}}>Перезаписати</Button>
+            <Button variant={'secondary'} onClick={() => {
+                setShowModal(true)
+            }}>Перезаписати</Button>
         )
     }
-    const [showModal, setShowModal] = useState(false)
+    const defaultShowModal = params.duel.id == "a2df0ee2-65b9-4c71-a330-797ce3ca79d6" //todo: remove debug
+    const [showModal, setShowModal] = useState(defaultShowModal)
     const handleClose = async (victory?: DuelVictory, dq?: DuelDQ) => {
         if (victory != null || dq != null) {
             const outcome: DuelOutcome = {
@@ -109,7 +125,7 @@ export default function DuelCard(params: DuelCardParams) {
                 </Card.Body>
             </Card>
             <OutcomeModal
-                handleClose={handleClose}
+                onClose={handleClose}
                 show={showModal}
                 leftName={participantLeft}
                 rightName={participantRight}
@@ -124,12 +140,97 @@ interface OutcomeModalParams {
     rightName: string
     show: boolean
     outcome?: DuelOutcome
-    handleClose: (victory?: DuelVictory, dq?: DuelDQ) => void
+    onClose: (victory?: DuelVictory, dq?: DuelDQ) => void
+}
+
+enum Victory {
+    Left = "left",
+    None = "none",
+    Right = "right",
+}
+
+interface DQ {
+    left: boolean
+    right: boolean
+}
+
+interface Judgement {
+    victory?: DuelVictory
+    dq?: DuelDQ
 }
 
 function OutcomeModal(params: OutcomeModalParams) {
+    const parseVictory = (outcome: DuelOutcome): Victory => {
+        if (outcome == null) {
+            return null
+        }
+        if (outcome.victory.right) {
+            return Victory.Right
+        }
+        if (outcome.victory.left) {
+            return Victory.Left
+        }
+        return Victory.None
+    }
+
+    const [victory, setVictory] = useState(parseVictory(params.outcome))
+    const handleVictoryChanged = (val: Victory) => {
+        setVictory(val)
+    }
+
+    // const defaultDQ: DQ = params.outcome?.dq ?? {left: false, right: false}
+
+    const defaultDQ: string[] = []
+    if (params.outcome?.dq?.left) {
+        defaultDQ.push("left")
+    }
+    if (params.outcome?.dq?.right) {
+        defaultDQ.push("right")
+    }
+    console.log("Default DQ:", defaultDQ)
+    const [dq, setDQ] = useState(defaultDQ)
+    // const [dq, setDQ] = useState(defaultDQ)
+    const handleDQChanged = (e: string[]) => {
+        setDQ(e)
+
+        if (e.includes("left") && victory == Victory.Left) {
+            setVictory(Victory.None)
+        }
+        if (e.includes("right") && victory == Victory.Right) {
+            setVictory(Victory.None)
+        }
+    }
+
+    const defaultJudgement: Judgement = {}
+    const [judgement, setJudgement] = useState(defaultJudgement)
+
+    useEffect(() => {
+        let newJudgement: Judgement = {}
+        if (victory) {
+            newJudgement.victory = {left: false, right: false}
+            if (victory == Victory.Left) {
+                newJudgement.victory.left = true
+            }
+            if (victory == Victory.Right) {
+                newJudgement.victory.right = true
+            }
+        }
+        if (dq.length > 0) {
+            newJudgement.dq = {left: dq.includes("left"), right: dq.includes("right")}
+        }
+        setJudgement(newJudgement)
+    }, [victory, dq]);
+    const handleSubmit = (event: any) => {
+        event.preventDefault()
+        event.stopPropagation()
+        params.onClose(
+            judgement.victory,
+            judgement.dq,
+        )
+    }
+
     return (
-        <Modal show={params.show} onHide={() => params.handleClose(null, null)}>
+        <Modal show={params.show} onHide={() => params.onClose(null, null)}>
             <Modal.Header closeButton>
                 <Modal.Title>{params.leftName} vs {params.rightName}</Modal.Title>
             </Modal.Header>
@@ -137,11 +238,72 @@ function OutcomeModal(params: OutcomeModalParams) {
                 <OutcomeRender outcome={params.outcome} leftName={params.leftName} rightName={params.rightName}/>
             </Modal.Body>
             <Modal.Footer className='d-flex justify-content-between'>
-                <ButtonGroup>
-
-                </ButtonGroup>
-                <Button variant="primary" onClick={() => params.handleClose({left: true, right: false})}>Перемога зліва</Button>
-                <Button variant="primary" onClick={() => params.handleClose({left: false, right: true})}>Перемога справа</Button>
+                <Form onSubmit={handleSubmit}>
+                    <Form.Group className={"mb-3"}>
+                        <ToggleButtonGroup
+                            name={"victory"}
+                            type={"radio"}
+                            value={victory}
+                            onChange={handleVictoryChanged}
+                        >
+                            <ToggleButton
+                                id={"win-left"}
+                                value={"left"}
+                                variant={"outline-primary"}
+                                disabled={dq.includes("left")}
+                                checked={victory == Victory.Left}
+                            >Перемога зліва</ToggleButton>
+                            <ToggleButton
+                                id={"win-none"}
+                                value={"none"}
+                                variant={"outline-primary"}
+                                checked={victory == Victory.None}
+                            >Дві поразки</ToggleButton>
+                            <ToggleButton
+                                id={"win-right"}
+                                value={"right"}
+                                variant={"outline-primary"}
+                                disabled={dq.includes("right")}
+                                checked={victory == Victory.Right}
+                            >Перемога справа</ToggleButton>
+                        </ToggleButtonGroup>
+                    </Form.Group>
+                    <Accordion defaultActiveKey={dq.length > 0 ? "0" : null}>
+                        <AccordionItem eventKey={"0"}>
+                            <Accordion.Header>DQ</Accordion.Header>
+                            <Accordion.Body>
+                                <Form.Group className={"mb-3"}>
+                                    <ToggleButtonGroup
+                                        name={"dq"}
+                                        type={"checkbox"}
+                                        defaultValue={dq}
+                                        className='d-flex justify-content-between'
+                                        onChange={handleDQChanged}
+                                    >
+                                        <ToggleButton
+                                            id={"dq-left"}
+                                            value={"left"}
+                                            variant={"outline-danger"}
+                                            checked={dq.includes("left")}
+                                        >DQ зліва</ToggleButton>
+                                        <ToggleButton
+                                            id={"dq-right"}
+                                            value={"right"}
+                                            variant={"outline-danger"}
+                                            checked={dq.includes("right")}
+                                        >DQ справа</ToggleButton>
+                                    </ToggleButtonGroup>
+                                </Form.Group>
+                            </Accordion.Body>
+                        </AccordionItem>
+                    </Accordion>
+                    <Container className={"mt-3 d-flex justify-content-between"}>
+                        <Button type={"submit"}>Зберегти результат</Button>
+                    </Container>
+                </Form>
+                {/*{JSON.stringify(judgement)}*/}
+                {/*<Button variant="primary" onClick={() => params.handleClose({left: true, right: false})}>Перемога зліва</Button>*/}
+                {/*<Button variant="primary" onClick={() => params.handleClose({left: false, right: true})}>Перемога справа</Button>*/}
             </Modal.Footer>
         </Modal>
     )
@@ -167,9 +329,9 @@ function OutcomeRender(params: OutcomeRenderParams) {
     }
     return (
         <>
-            <p>
+            <Alert>
                 Дуель проведено {(new Date(params.outcome.created_at)).toLocaleTimeString('uk-UA', {hour12: false})}
-            </p>
+            </Alert>
             <p>
                 {victoryText}
             </p>
