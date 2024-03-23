@@ -24,7 +24,7 @@ interface MatchRefereeParams {
 
 export function MatchReferee(params: MatchRefereeParams) {
     const defaultMatch = (): MatchInProgress => {
-        return {created_at: undefined, duels: {}, id: "", name: "", participants: []}
+        return {created_at: undefined, duels: {}, id: "", name: "", participants: [], participantsDict: {}}
     }
     const [match, setMatch] = useState(defaultMatch())
     useEffect(() => {

@@ -44,6 +44,7 @@ export default function DuelList(params: DuelListParams) {
         const outcome = mostRecentOutcomes[duel.id] ?? undefined
         duelRows.push(
             <DuelCard
+                key={duel.id}
                 matchId={params.matchId}
                 duel={duel}
                 outcome={outcome}

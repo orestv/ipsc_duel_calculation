@@ -2,6 +2,7 @@ export interface MatchInProgress {
     id: string
     name: string
     participants: Participant[]
+    participantsDict: {[key: string]: Participant}
     duels: { [key: number]: MatchDuel[] }
     created_at: Date
 }
@@ -41,4 +42,10 @@ export interface DuelVictory {
 export interface DuelDQ {
     left: boolean
     right: boolean
+}
+
+export interface ParticipantVictories {
+    participant_id: string
+    victories: number
+    dq: boolean
 }
