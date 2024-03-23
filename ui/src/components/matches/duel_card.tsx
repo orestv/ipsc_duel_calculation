@@ -108,7 +108,13 @@ export default function DuelCard(params: DuelCardParams) {
                     {duelActions(params.outcome)}
                 </Card.Body>
             </Card>
-            <OutcomeModal handleClose={handleClose} show={showModal} leftName={participantLeft} rightName={participantRight}/>
+            <OutcomeModal
+                handleClose={handleClose}
+                show={showModal}
+                leftName={participantLeft}
+                rightName={participantRight}
+                outcome={params.outcome}
+            />
         </>
     )
 }
@@ -117,6 +123,7 @@ interface OutcomeModalParams {
     leftName: string
     rightName: string
     show: boolean
+    outcome?: DuelOutcome
     handleClose: (victory?: DuelVictory, dq?: DuelDQ) => void
 }
 
@@ -127,13 +134,42 @@ function OutcomeModal(params: OutcomeModalParams) {
                 <Modal.Title>{params.leftName} vs {params.rightName}</Modal.Title>
             </Modal.Header>
             <Modal.Body>
-                {/*TODO: information about previous outcome if available*/}
-                <p>Text</p>
+                <OutcomeRender outcome={params.outcome} leftName={params.leftName} rightName={params.rightName}/>
             </Modal.Body>
             <Modal.Footer className='d-flex justify-content-between'>
                 <Button variant="primary" onClick={() => params.handleClose({left: true, right: false})}>Перемога зліва</Button>
                 <Button variant="primary" onClick={() => params.handleClose({left: false, right: true})}>Перемога справа</Button>
             </Modal.Footer>
         </Modal>
+    )
+}
+
+interface OutcomeRenderParams {
+    outcome?: DuelOutcome
+    leftName: string
+    rightName: string
+}
+
+function OutcomeRender(params: OutcomeRenderParams) {
+    if (!params.outcome)
+        return <></>
+
+    let victoryText = ""
+    if (params.outcome.victory.left) {
+        victoryText = `Переміг зліва (${params.leftName})`
+    } else if (params.outcome.victory.right) {
+        victoryText = `Переміг справа (${params.rightName})`
+    } else {
+        victoryText = "Дві поразки"
+    }
+    return (
+        <>
+            <p>
+                Дуель проведено {(new Date(params.outcome.created_at)).toLocaleTimeString('uk-UA', {hour12: false})}
+            </p>
+            <p>
+                {victoryText}
+            </p>
+        </>
     )
 }
