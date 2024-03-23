@@ -3,7 +3,7 @@ import {useLoaderData} from "react-router-dom";
 import {MatchInProgress, MatchOutcomes} from "./models";
 import Navbar from "react-bootstrap/Navbar";
 import Container from "react-bootstrap/Container";
-import {Button, ButtonGroup, Row, Stack, ToggleButton} from "react-bootstrap";
+import {Button, ButtonGroup, Col, Row, Stack, ToggleButton} from "react-bootstrap";
 import DuelList from "./duel_list";
 import {fetchMatchInProgress, fetchMatchOutcomes, getMatchCompletion, getRangeCompletion} from "./match_service";
 import ProgressCounter from "./progress_counter";
@@ -85,26 +85,29 @@ export function MatchReferee(params: MatchRefereeParams) {
 
     return <>
         <h1>
-            <Stack direction={"horizontal"} gap={1}>
-                Матч "{match.name}"
-                <ProgressCounter status={matchCompletionStatus}/>
-                <ButtonGroup>
-                    {rangeButtons}
-                </ButtonGroup>
-            </Stack>
+            {/*<Stack direction={"horizontal"} gap={1}>*/}
+            <Row className={"justify-content-between"}>
+                <Col>
+                    Матч "{match.name}"
+                </Col>
+                <Col>
+                    <ButtonGroup>
+                        {rangeButtons}
+                    </ButtonGroup>
+                </Col>
+            </Row>
+            {/*</Stack>*/}
         </h1>
-        <Navbar>
-            <Container>
-                {/*<Link to={`/matches/${params.matchId}/results`}>*/}
-                <Button onClick={() => {
+        <div className={"d-grid gap-2"}>
+            <Button
+                onClick={() => {
                     setShowResults(true)
-                }}>Результати</Button>
-                {/*</Link>*/}
-            </Container>
-            <Container>
-
-            </Container>
-        </Navbar>
+                }}
+                // size={"lg"}
+            >
+                Результати <ProgressCounter status={matchCompletionStatus}/>
+            </Button>
+        </div>
         <Container fluid>
             <Row>
                 <DuelList
