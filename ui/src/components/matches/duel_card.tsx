@@ -85,13 +85,15 @@ export default function DuelCard(params: DuelCardParams) {
     }
     const [showModal, setShowModal] = useState(false)
     const handleClose = async (victory?: DuelVictory, dq?: DuelDQ) => {
-        const outcome: DuelOutcome = {
-            duel_id: params.duel.id,
-            victory: victory,
-            dq: dq,
+        if (victory != null || dq != null) {
+            const outcome: DuelOutcome = {
+                duel_id: params.duel.id,
+                victory: victory,
+                dq: dq,
+            }
+            await recordOutcome(params.matchId, outcome)
+            params.onOutcomeRecorded()
         }
-        await recordOutcome(params.matchId, outcome)
-        params.onOutcomeRecorded()
         setShowModal(false)
     }
 
@@ -127,6 +129,7 @@ function OutcomeModal(params: OutcomeModalParams) {
                 <Modal.Title>{params.leftName} vs {params.rightName}</Modal.Title>
             </Modal.Header>
             <Modal.Body>
+                {/*TODO: information about previous outcome if available*/}
                 <p>Text</p>
             </Modal.Body>
             <Modal.Footer className='d-flex justify-content-between'>
