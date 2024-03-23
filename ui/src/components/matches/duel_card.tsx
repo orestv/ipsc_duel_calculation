@@ -5,7 +5,7 @@ import {
     Button,
     ButtonGroup,
     Card,
-    Form,
+    Form, InputGroup,
     Modal,
     Stack,
     ToggleButton,
@@ -97,7 +97,7 @@ export default function DuelCard(params: DuelCardParams) {
             }}>Перезаписати</Button>
         )
     }
-    const defaultShowModal = params.duel.id == "a2df0ee2-65b9-4c71-a330-797ce3ca79d6" //todo: remove debug
+    const defaultShowModal= false
     const [showModal, setShowModal] = useState(defaultShowModal)
     const handleClose = async (victory?: DuelVictory, dq?: DuelDQ) => {
         if (victory != null || dq != null) {
@@ -114,8 +114,8 @@ export default function DuelCard(params: DuelCardParams) {
 
     return (
         <>
-            <Card className={"my-5"} style={{width: '100%'}}>
-                <Card.Header className="d-flex justify-content-between">
+            <Card className={"my-3"}>
+                <Card.Header className='d-flex justify-content-between'>
                     {participantSpan(participantLeft, victoryState.left)}
                     {participantSpan(participantRight, victoryState.right)}
                 </Card.Header>
@@ -237,15 +237,15 @@ function OutcomeModal(params: OutcomeModalParams) {
 
     return (
         <Modal show={params.show} onHide={handleHide}>
-            <Modal.Header closeButton>
+            <Modal.Header closeButton className='d-flex justify-content-between'>
                 <Modal.Title><b>{params.leftName}</b> vs <b>{params.rightName}</b></Modal.Title>
             </Modal.Header>
-            <Modal.Body>
+            <Modal.Body className='d-flex justify-content-between'>
                 <OutcomeRender outcome={params.outcome} leftName={params.leftName} rightName={params.rightName}/>
             </Modal.Body>
             <Modal.Footer className='d-flex justify-content-between'>
-                <Form onSubmit={handleSubmit}>
-                    <Form.Group className={"mb-3"}>
+                <Form onSubmit={handleSubmit} >
+                    <Form.Group className={"mb-3"} >
                         <ToggleButtonGroup
                             name={"victory"}
                             type={"radio"}
@@ -304,13 +304,10 @@ function OutcomeModal(params: OutcomeModalParams) {
                         </AccordionItem>
                     </Accordion>
                     <Container className={"mt-3 d-flex justify-content-between"}>
-                        <Button size={"lg"} disabled={!canSubmit} type={"submit"}>Зберегти результат</Button>
                         <Button size={"lg"} variant={"outline-dark"} onClick={handleHide}>Закрити</Button>
+                        <Button size={"lg"} disabled={!canSubmit} type={"submit"}>Зберегти результат</Button>
                     </Container>
                 </Form>
-                {/*{JSON.stringify(judgement)}*/}
-                {/*<Button variant="primary" onClick={() => params.handleClose({left: true, right: false})}>Перемога зліва</Button>*/}
-                {/*<Button variant="primary" onClick={() => params.handleClose({left: false, right: true})}>Перемога справа</Button>*/}
             </Modal.Footer>
         </Modal>
     )

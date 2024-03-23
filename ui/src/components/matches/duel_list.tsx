@@ -54,8 +54,8 @@ export default function DuelList(params: DuelListParams) {
     }
 
     return (
-        <Container>
+        <>
             {duelRows}
-        </Container>
+        </>
     )
 }

@@ -3,7 +3,7 @@ import {useLoaderData} from "react-router-dom";
 import {MatchInProgress, MatchOutcomes} from "./models";
 import Navbar from "react-bootstrap/Navbar";
 import Container from "react-bootstrap/Container";
-import {Button, ButtonGroup, Col, Row, Stack, ToggleButton} from "react-bootstrap";
+import {Button, ButtonGroup, Col, Form, InputGroup, Row, Stack, ToggleButton} from "react-bootstrap";
 import DuelList from "./duel_list";
 import {fetchMatchInProgress, fetchMatchOutcomes, getMatchCompletion, getRangeCompletion} from "./match_service";
 import ProgressCounter from "./progress_counter";
@@ -41,6 +41,7 @@ export function MatchReferee(params: MatchRefereeParams) {
         })()
     }, []);
 
+    // state for fetching match outcomes, displays the match or something.
     const [outcomesUpdated, setOutcomesUpdated] = useState(true)
     const defaultOutcomes = (): MatchOutcomes => {
         return {outcomes: {}}
@@ -67,7 +68,9 @@ export function MatchReferee(params: MatchRefereeParams) {
                 variant={"outline-primary"}
                 type={"radio"}
                 checked={selectedRange == r}
-                onChange={(e) => {setSelectedRange(Number(e.currentTarget.value))}}
+                onChange={(e) => {
+                    setSelectedRange(Number(e.currentTarget.value))
+                }}
                 key={r}
                 id={`range-${r}`} value={r}>
                 Рубіж {r}
@@ -80,43 +83,59 @@ export function MatchReferee(params: MatchRefereeParams) {
             range: selectedRange
         }
     )
+    const getNextDuel = (): number => {
+        console.log(outcomes.outcomes)
+        for (const duel of match.duels[selectedRange] ?? []) {
+            if (!(duel.id in outcomes.outcomes)) {
+                return duel.order
+            }
+        }
+        return null
+    }
+    useEffect(() => {
+        setNextDuel(getNextDuel())
+    }, [outcomes, match]);
+    const [nextDuel, setNextDuel] = useState(getNextDuel())
 
     const [showResults, setShowResults] = useState(false)
 
     return <>
-        <h1>
-            {/*<Stack direction={"horizontal"} gap={1}>*/}
-            <Row className={"justify-content-between"}>
+        <Navbar sticky={"top"} expand={",d"} className={"bg-body-secondary"}>
+            <Container fluid>
+                <Navbar.Brand>Наступна: {nextDuel}</Navbar.Brand>
+                <Form className={"d-flex"}>
+                    <InputGroup>
+                    </InputGroup>
+                    <InputGroup>
+                        <Button
+                            onClick={() => {
+                                setShowResults(true)
+                            }}
+                        >
+                            Результати <ProgressCounter status={matchCompletionStatus}/>
+                        </Button>
+                    </InputGroup>
+                </Form>
+            </Container>
+        </Navbar>
+        <Container fluid>
+            <Row className={"my-3"}>
                 <Col>
-                    Матч "{match.name}"
-                </Col>
-                <Col>
-                    <ButtonGroup>
+                    <ButtonGroup className='d-flex justify-content-between'>
                         {rangeButtons}
                     </ButtonGroup>
                 </Col>
             </Row>
-            {/*</Stack>*/}
-        </h1>
-        <div className={"d-grid gap-2"}>
-            <Button
-                onClick={() => {
-                    setShowResults(true)
-                }}
-                // size={"lg"}
-            >
-                Результати <ProgressCounter status={matchCompletionStatus}/>
-            </Button>
-        </div>
-        <Container fluid>
             <Row>
-                <DuelList
-                    matchId={params.matchId}
-                    range={selectedRange}
-                    duels={match.duels[selectedRange] ?? []}
-                    outcomes={outcomes}
-                    onOutcomeRecorded={handleOutcomeRecorded}
-                />
+                <Col>
+                    <DuelList
+                        matchId={params.matchId}
+                        range={selectedRange}
+                        duels={match.duels[selectedRange] ?? []}
+                        outcomes={outcomes}
+                        onOutcomeRecorded={handleOutcomeRecorded}
+                    />
+                </Col>
             </Row>
         </Container>
         <MatchResultsModal key={match.id} match={match} outcomes={outcomes} show={showResults} onHide={() => {
