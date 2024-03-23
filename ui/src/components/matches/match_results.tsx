@@ -3,8 +3,8 @@ import React, {useEffect, useState} from "react";
 import {Link, useLoaderData} from "react-router-dom";
 import Navbar from "react-bootstrap/Navbar";
 import Container from "react-bootstrap/Container";
-import {Button, Modal, Table} from "react-bootstrap";
-import {FaArrowLeft} from "react-icons/fa";
+import {Badge, Button, Modal, Table} from "react-bootstrap";
+import {FaArrowLeft, FaPlus} from "react-icons/fa";
 import {CompletionStatus, MatchInProgress, MatchOutcomes, Participant, ParticipantVictories} from "./models";
 import {fetchParticipantVictories, getMatchCompletion} from "./match_service";
 import {CLASSES} from "../../models";
@@ -143,12 +143,27 @@ function RangeClassResults(params: RangeClassResultsParams) {
             return 0
         }
     )
+    const topVictoryCounts = [...(new Set(
+            params.victories.map(v => v.victories)
+    ))].sort((a, b) => b - a).slice(0, 4)
+
+    const isCompleted = params.status.completed == params.status.total
+
     const rows = params.victories.map(
         (v) => {
+            const isWinner = topVictoryCounts.includes(v.victories)
+            let badge = <></>
+            if (isCompleted) {
+                if (v.dq) {
+                    badge = <Badge bg={"danger"}>dq</Badge>
+                } else if (isWinner) {
+                    badge = <Badge bg={"success"}>Півфінал</Badge>
+                }
+            }
             return (
                 <tr key={v.participant.id}>
                     <td>{v.participant.name}</td>
-                    <td>{v.victories}</td>
+                    <td>{v.victories} {badge}</td>
                 </tr>
             )
         }
