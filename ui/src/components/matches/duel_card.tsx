@@ -76,22 +76,23 @@ export default function DuelCard(params: DuelCardParams) {
             return <></>
         }
         const outcomeDate = new Date(outcome.created_at)
+        const outcomeDateString = outcomeDate.toLocaleTimeString('uk-UA', {hour12: false}) ?? ''
         return (
             <>
-                <span>{outcomeDate.toLocaleTimeString('uk-UA', {hour12: false}) ?? ''}</span>
+                <span>{outcomeDateString}</span>
             </>
         )
     }
     const duelActions = (outcome?: DuelOutcome) => {
         if (outcome == undefined) {
             return (
-                <Button variant='outline-primary' onClick={() => {
+                <Button variant='primary' onClick={() => {
                     setShowModal(true)
                 }}>Судити</Button>
             )
         }
         return (
-            <Button variant={'secondary'} onClick={() => {
+            <Button variant={'outline-secondary'} onClick={() => {
                 setShowModal(true)
             }}>Перезаписати</Button>
         )
@@ -113,7 +114,7 @@ export default function DuelCard(params: DuelCardParams) {
 
     return (
         <>
-            <Card className={"my-3"} style={{width: '100%'}}>
+            <Card className={"my-5"} style={{width: '100%'}}>
                 <Card.Header className="d-flex justify-content-between">
                     {participantSpan(participantLeft, victoryState.left)}
                     {participantSpan(participantRight, victoryState.right)}
@@ -178,8 +179,6 @@ function OutcomeModal(params: OutcomeModalParams) {
         setVictory(val)
     }
 
-    // const defaultDQ: DQ = params.outcome?.dq ?? {left: false, right: false}
-
     const defaultDQ: string[] = []
     if (params.outcome?.dq?.left) {
         defaultDQ.push("left")
@@ -187,9 +186,7 @@ function OutcomeModal(params: OutcomeModalParams) {
     if (params.outcome?.dq?.right) {
         defaultDQ.push("right")
     }
-    console.log("Default DQ:", defaultDQ)
     const [dq, setDQ] = useState(defaultDQ)
-    // const [dq, setDQ] = useState(defaultDQ)
     const handleDQChanged = (e: string[]) => {
         setDQ(e)
 
@@ -219,6 +216,7 @@ function OutcomeModal(params: OutcomeModalParams) {
             newJudgement.dq = {left: dq.includes("left"), right: dq.includes("right")}
         }
         setJudgement(newJudgement)
+        setCanSubmit(Object.keys(newJudgement).length > 0)
     }, [victory, dq]);
     const handleSubmit = (event: any) => {
         event.preventDefault()
@@ -229,10 +227,18 @@ function OutcomeModal(params: OutcomeModalParams) {
         )
     }
 
+    const [canSubmit, setCanSubmit] = useState(false)
+
+    const handleHide = () => {
+        setVictory(parseVictory(params.outcome))
+        setDQ(defaultDQ)
+        params.onClose(null, null)
+    }
+
     return (
-        <Modal show={params.show} onHide={() => params.onClose(null, null)}>
+        <Modal show={params.show} onHide={handleHide}>
             <Modal.Header closeButton>
-                <Modal.Title>{params.leftName} vs {params.rightName}</Modal.Title>
+                <Modal.Title><b>{params.leftName}</b> vs <b>{params.rightName}</b></Modal.Title>
             </Modal.Header>
             <Modal.Body>
                 <OutcomeRender outcome={params.outcome} leftName={params.leftName} rightName={params.rightName}/>
@@ -298,7 +304,8 @@ function OutcomeModal(params: OutcomeModalParams) {
                         </AccordionItem>
                     </Accordion>
                     <Container className={"mt-3 d-flex justify-content-between"}>
-                        <Button type={"submit"}>Зберегти результат</Button>
+                        <Button size={"lg"} disabled={!canSubmit} type={"submit"}>Зберегти результат</Button>
+                        <Button size={"lg"} variant={"outline-dark"} onClick={handleHide}>Закрити</Button>
                     </Container>
                 </Form>
                 {/*{JSON.stringify(judgement)}*/}
@@ -317,24 +324,37 @@ interface OutcomeRenderParams {
 
 function OutcomeRender(params: OutcomeRenderParams) {
     if (!params.outcome)
-        return <></>
+        return <>Дуель ще не відбулась</>
 
     let victoryText = ""
     if (params.outcome.victory.left) {
-        victoryText = `Переміг зліва (${params.leftName})`
+        victoryText = `Переміг зліва (${params.leftName}).`
     } else if (params.outcome.victory.right) {
-        victoryText = `Переміг справа (${params.rightName})`
+        victoryText = `Переміг справа (${params.rightName}).`
     } else {
-        victoryText = "Дві поразки"
+        victoryText = "Дві поразки."
     }
+    let alertsDQ = []
+    if (params.outcome.dq?.left) {
+        alertsDQ.push(
+            <Alert variant={"danger"}>DQ: {params.leftName}</Alert>
+        )
+    }
+    if (params.outcome.dq?.right) {
+        alertsDQ.push(
+            <Alert variant={"danger"}>DQ: {params.rightName}</Alert>
+        )
+    }
+
     return (
         <>
             <Alert>
-                Дуель проведено {(new Date(params.outcome.created_at)).toLocaleTimeString('uk-UA', {hour12: false})}
-            </Alert>
-            <p>
+                <p>
+                    Дуель проведено {(new Date(params.outcome.created_at)).toLocaleTimeString('uk-UA', {hour12: false})}
+                </p>
                 {victoryText}
-            </p>
+            </Alert>
+            {alertsDQ}
         </>
     )
 }
