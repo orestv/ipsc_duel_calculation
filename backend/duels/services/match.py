@@ -176,7 +176,7 @@ class MatchService:
             for duel in duels:
 
                 outcome = await self._get_duel_outcome(duel, match_id)
-                if not outcome or outcome.dummy:
+                if not outcome:
                     continue
 
                 if outcome.dq:

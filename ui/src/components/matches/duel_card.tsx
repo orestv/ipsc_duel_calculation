@@ -15,6 +15,7 @@ import {recordOutcome} from "./match_service";
 import {types} from "sass";
 import Boolean = types.Boolean;
 import Container from "react-bootstrap/Container";
+import {FaCross, FaEye, FaSave, FaWindowClose} from "react-icons/fa";
 
 export interface DuelCardParams {
     matchId: string,
@@ -95,7 +96,7 @@ export default function DuelCard(params: DuelCardParams) {
         return (
             <Button variant={'outline-secondary'} onClick={() => {
                 setShowModal(true)
-            }}>Перезаписати</Button>
+            }}><FaEye/> Переглянути</Button>
         )
     }
     const defaultShowModal = false
@@ -199,7 +200,7 @@ function OutcomeModal(params: OutcomeModalParams) {
         setDQ(e)
     }
 
-    const [reshoot, setReshoot] = useState(false)
+    const [reshoot, setReshoot] = useState(params.outcome?.reshoot)
 
     // correctly load the state on startup
     useEffect(() => {
@@ -216,10 +217,15 @@ function OutcomeModal(params: OutcomeModalParams) {
     }, [reshoot]);
 
     useEffect(() => {
-        if (dq.includes("left") && victory == Victory.Left) {
+        const leftDQ = dq.includes("left")
+        const rightDQ = dq.includes("right")
+        if (leftDQ && victory == Victory.Left) {
             setVictory(Victory.None)
         }
-        if (dq.includes("right") && victory == Victory.Right) {
+        if (rightDQ && victory == Victory.Right) {
+            setVictory(Victory.None)
+        }
+        if (leftDQ && rightDQ) {
             setVictory(Victory.None)
         }
     }, [dq]);
@@ -229,19 +235,22 @@ function OutcomeModal(params: OutcomeModalParams) {
 
         if (reshoot) {
             newJudgement.reshoot = true
-        } else if (dq.length > 0) {
-            newJudgement.dq = {left: dq.includes("left"), right: dq.includes("right")}
-        } else if (victory) {
-            newJudgement.victory = {left: false, right: false}
-            if (victory == Victory.Left) {
-                newJudgement.victory.left = true
+        } else {
+            if (dq.length > 0) {
+                newJudgement.dq = {left: dq.includes("left"), right: dq.includes("right")}
             }
-            if (victory == Victory.Right) {
-                newJudgement.victory.right = true
+            if (victory) {
+                newJudgement.victory = {left: false, right: false}
+                if (victory == Victory.Left) {
+                    newJudgement.victory.left = true
+                }
+                if (victory == Victory.Right) {
+                    newJudgement.victory.right = true
+                }
             }
         }
         setJudgement(newJudgement)
-        setCanSubmit(newJudgement.victory != null || newJudgement.dq != null || newJudgement.reshoot)
+        setCanSubmit(newJudgement.reshoot || (newJudgement.victory != null))
     }, [victory, dq, reshoot]);
     const handleSubmit = (event: any) => {
         event.preventDefault()
@@ -265,8 +274,6 @@ function OutcomeModal(params: OutcomeModalParams) {
     const defaultAccordionKey = (() => {
         if (dq.length > 0)
             return "dq"
-        if (reshoot)
-            return "reshoot"
         return null
     })()
 
@@ -280,6 +287,25 @@ function OutcomeModal(params: OutcomeModalParams) {
             </Modal.Body>
             <Modal.Footer className={"d-flex justify-content-between"}>
                 <Form onSubmit={handleSubmit}>
+                    <Form.Group className={"mb-5"}>
+                        <ToggleButton
+                            id={`reshoot-${params.outcome?.duel_id}`}
+                            size={"lg"}
+                            value={"reshoot"}
+                            type={"checkbox"}
+                            variant={"outline-primary"}
+                            className={"d-block w-100"}
+                            defaultChecked={reshoot}
+                            checked={reshoot}
+                            onChange={
+                                (e) => {
+                                    setReshoot(e.currentTarget.checked)
+                                }
+                            }
+                        >
+                            Перестріл
+                        </ToggleButton>
+                    </Form.Group>
                     <Form.Group className={"mb-3"}>
                         <ToggleButtonGroup
                             name={"victory"}
@@ -345,30 +371,10 @@ function OutcomeModal(params: OutcomeModalParams) {
                                 </Form.Group>
                             </Accordion.Body>
                         </AccordionItem>
-                        <AccordionItem eventKey={"reshoot"}>
-                            <Accordion.Header>Перестріл</Accordion.Header>
-                            <Accordion.Body>
-                                <ToggleButton
-                                    id={`reshoot-${params.outcome?.duel_id}`}
-                                    value={"reshoot"}
-                                    type={"checkbox"}
-                                    variant={"outline-info"}
-                                    className={"d-block w-100"}
-                                    checked={reshoot}
-                                    onChange={
-                                        (e) => {
-                                            setReshoot(e.currentTarget.checked)
-                                        }
-                                    }
-                                >
-                                    Перестріл
-                                </ToggleButton>
-                            </Accordion.Body>
-                        </AccordionItem>
                     </Accordion>
                     <Container className={"mt-5 d-flex justify-content-between"}>
                         <Button size={"lg"} variant={"outline-dark"} onClick={handleHide}>Закрити</Button>
-                        <Button size={"lg"} disabled={!canSubmit} type={"submit"}>Зберегти результат</Button>
+                        <Button size={"lg"} disabled={!canSubmit} type={"submit"}><FaSave/> Зберегти результат</Button>
                     </Container>
                 </Form>
             </Modal.Footer>
@@ -394,10 +400,15 @@ function OutcomeRender(params: OutcomeRenderParams) {
         } else {
             victoryText = "Дві поразки."
         }
-    } else if(params.outcome.reshoot) {
+    } else if (params.outcome.reshoot) {
         victoryText = "Перестріл."
     }
     let alertsDQ = []
+    if (params.outcome.dummy) {
+        alertsDQ.push(
+            <Alert key={"dummy"} variant={"info"}>Фіктивний результат дуелі!</Alert>
+        )
+    }
     if (params.outcome.dq?.left) {
         alertsDQ.push(
             <Alert key={"dqLeft"} variant={"danger"}>DQ: {params.leftName}</Alert>
@@ -413,7 +424,7 @@ function OutcomeRender(params: OutcomeRenderParams) {
         <>
             <Alert>
                 <p>
-                    Дуель проведено {(new Date(params.outcome.created_at)).toLocaleTimeString('uk-UA', {hour12: false})}
+                    Результат збережено {(new Date(params.outcome.created_at)).toLocaleTimeString('uk-UA', {hour12: false})}
                 </p>
                 {victoryText}
             </Alert>
