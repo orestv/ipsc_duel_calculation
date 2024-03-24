@@ -2,7 +2,8 @@ import {API_ROOT} from "../../storage";
 
 import {
     CompletionStatus,
-    DuelOutcome, MatchDuel,
+    DuelOutcome,
+    MatchDuel,
     MatchInProgress,
     MatchOutcomes,
     Participant,
@@ -56,8 +57,7 @@ export async function fetchMatchOutcomes(matchId: string): Promise<MatchOutcomes
     const response = await fetch(
         `${API_ROOT}/matches/${matchId}/outcomes`
     )
-    const matchOutcomes = JSON.parse(await response.text())
-    return matchOutcomes
+    return JSON.parse(await response.text())
 }
 
 export async function fetchParticipantVictories(matchId: string): Promise<ParticipantVictories[]> {
@@ -114,8 +114,11 @@ export function getRangeCompletion(match: MatchInProgress, outcomes: MatchOutcom
 function getCompletionRate(duels: MatchDuel[], outcomes: MatchOutcomes) {
     const duelIDs = duels.map((d) => {return d.id})
     const totalDuels = duels.length
-    const completedDuels = Object.keys(outcomes.outcomes).filter(
-        (val) => {return duelIDs.includes(val)}
+    const mostRecentOutcomes = getMostRecentOutcomes(outcomes)
+    const completedDuels = Object.keys(mostRecentOutcomes).filter(
+        (duelId) => {
+            return duelIDs.includes(duelId)
+        }
     ).length
     return {
         completed: completedDuels,

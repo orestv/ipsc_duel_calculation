@@ -105,6 +105,7 @@ export default function DuelCard(params: DuelCardParams) {
                 duel_id: params.duel.id,
                 victory: victory,
                 dq: dq,
+                dummy: false,
             }
             await recordOutcome(params.matchId, outcome)
             params.onOutcomeRecorded()

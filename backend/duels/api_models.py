@@ -68,6 +68,7 @@ class OutcomeVictory(pydantic.BaseModel):
 
 class DuelOutcome(pydantic.BaseModel):
     duel_id: uuid.UUID
+    dummy: bool = False
     victory: typing.Optional[OutcomeVictory] = None
     reshoot: typing.Optional[bool] = None
     dq: typing.Optional[OutcomeDQ] = None
