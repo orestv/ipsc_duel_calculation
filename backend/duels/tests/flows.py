@@ -9,7 +9,7 @@ from litestar.testing import AsyncTestClient
 import duels.model
 from duels.api import app
 from duels.api_models import Duels, MatchSetup, RangeSetup, ClassSetup, MatchCreate, MatchInProgress, DuelOutcome, \
-    OutcomeVictory, ParticipantVictories, OutcomeDQ, MatchDuel
+    OutcomeVictory, ParticipantVictories, OutcomeDQ, MatchDuel, MatchOutcomes
 from duels.model import Class, Range
 
 
@@ -176,6 +176,62 @@ async def test_record_reshoot(test_client: AsyncTestClient, match_outcome_fixtur
     last_duel: MatchDuel = fetched_range1_duels[-1]
     assert (last_duel.left, last_duel.right) == (duel.left, duel.right)
     assert last_duel.order == len(fetched_range1_duels)
+
+
+async def test_record_dq(test_client: AsyncTestClient, match_outcome_fixture: MatchOutcomeFixture):
+    range_1_duels = match_outcome_fixture.match_in_progress.duels[Range.First]
+
+    disqualified_participant_id = range_1_duels[0].left
+    all_participant_duels = [
+        duel
+        for duel in range_1_duels
+        if disqualified_participant_id in (duel.left, duel.right)
+    ]
+    success_duels = all_participant_duels[:2]
+    disqualified_duel = all_participant_duels[2]
+
+    for success_duel in success_duels:
+        outcome = DuelOutcome(
+            duel_id=success_duel.id,
+            victory=OutcomeVictory(
+                left=disqualified_participant_id == success_duel.left,
+                right=disqualified_participant_id == success_duel.right,
+            ),
+            created_at=None,
+        )
+        await test_client.post(
+            f"/api/matches/{match_outcome_fixture.match_id}/duels/{success_duel.id}/outcomes",
+            content=outcome.json(),
+        )
+
+    outcome = DuelOutcome(
+        duel_id=disqualified_duel.id,
+        dq=OutcomeDQ(left=True),
+        victory=OutcomeVictory(right=True),
+        created_at=None,
+    )
+    outcome_url = f"/api/matches/{match_outcome_fixture.match_id}/duels/{disqualified_duel.id}/outcomes"
+    outcome_create_response = await test_client.post(
+        outcome_url,
+        content=outcome.json(),
+    )
+    assert outcome_create_response.status_code == litestar.status_codes.HTTP_201_CREATED
+
+    outcome_url = f"/api/matches/{match_outcome_fixture.match_id}/outcomes"
+    outcome_response = await test_client.get(outcome_url)
+    assert outcome_response.status_code == litestar.status_codes.HTTP_200_OK
+    outcome = MatchOutcomes.parse_obj(outcome_response.json())
+
+    expected_loss_duels = [
+        d for d in all_participant_duels
+        if d.id not in [dd.id for dd in success_duels] + [disqualified_duel.id]
+    ]
+    for lost_duel in expected_loss_duels:
+        assert lost_duel.id in outcome.outcomes
+        duel_outcome = outcome.outcomes[lost_duel.id][-1]
+        assert duel_outcome.dummy
+        assert duel_outcome.victory == OutcomeVictory(left=False, right=False)
+
 
 async def test_calculate_victories(test_client: AsyncTestClient, match_outcome_fixture: MatchOutcomeFixture):
     victor = match_outcome_fixture.match_in_progress.participants[0]

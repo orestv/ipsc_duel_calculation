@@ -7,7 +7,7 @@ import litestar.exceptions
 
 import duels.model
 from duels.api_models import MatchCreate, MatchParticipant, MatchDuel, MatchInProgress, MatchOutcomes, DuelOutcome, \
-    ParticipantVictories
+    ParticipantVictories, OutcomeDQ, OutcomeVictory
 from duels.repositories import MatchRepository
 
 
@@ -96,17 +96,63 @@ class MatchService:
         outcome.created_at = datetime.datetime.now()
         await self.repository.add_outcome(match_id, outcome)
         if outcome.reshoot:
-            match = await self.repository.get_match(match_id)
-            for rng, duels in match.duels.items():
-                found_duels = [d for d in duels if d.id == outcome.duel_id]
-                if not found_duels:
-                    continue
-                found_duel = found_duels[0]
-                reshoot_duel = found_duel.copy()
-                reshoot_duel.id = uuid.uuid4()
-                reshoot_duel.order = len(duels) + 1
-                match.duels[rng].append(reshoot_duel)
-            await self.repository.update_match(match)
+            await self._record_reshoot(match_id, outcome)
+        elif outcome.dq:
+            await self._record_dq(match_id, outcome)
+
+    async def _record_reshoot(self, match_id, outcome):
+        match = await self.repository.get_match(match_id)
+        for rng, duels in match.duels.items():
+            found_duels = [d for d in duels if d.id == outcome.duel_id]
+            if not found_duels:
+                continue
+            found_duel = found_duels[0]
+            reshoot_duel = found_duel.copy()
+            reshoot_duel.id = uuid.uuid4()
+            reshoot_duel.order = len(duels) + 1
+            match.duels[rng].append(reshoot_duel)
+        await self.repository.update_match(match)
+
+    async def _record_dq(self, match_id: uuid.UUID, outcome: DuelOutcome):
+        match = await self.repository.get_match(match_id)
+        dq_participant_ids = await self._get_dq_participant_ids(match, outcome)
+        await self._disqualify_participant(match, dq_participant_ids, outcome.duel_id)
+
+    async def _get_dq_participant_ids(self, match: MatchInProgress, outcome: DuelOutcome) -> list[uuid.UUID]:
+        all_duels = itertools.chain(*match.duels.values())
+        dq_duel: MatchDuel = [d for d in all_duels if d.id == outcome.duel_id][0]
+        participant_ids = []
+        if outcome.dq.left:
+            participant_ids.append(dq_duel.left)
+        if outcome.dq.right:
+            participant_ids.append(dq_duel.right)
+        return participant_ids
+
+    async def _disqualify_participant(self, match: MatchInProgress, participant_ids: list[uuid.UUID], dq_duel_id: uuid.UUID):
+        all_duels = itertools.chain(*match.duels.values())
+        participant_duels = [
+            (d, await self._get_duel_outcome(d, match.id))
+            for d in all_duels
+            if any (p for p in participant_ids if p in (d.left, d.right))
+        ]
+        participant_duels = [
+            d
+            for d, outcome in participant_duels if not outcome or outcome.dummy
+        ]
+        for duel in participant_duels:
+            new_outcome = DuelOutcome(
+                duel_id=duel.id,
+                dummy=True,
+                dq=OutcomeDQ(
+                    left=duel.left in participant_ids,
+                    right=duel.right in participant_ids,
+                ),
+                victory=OutcomeVictory(left=False, right=False),
+                created_at=datetime.datetime.now(),
+            )
+            await self.repository.add_outcome(match.id, new_outcome)
+        # todo: find all incomplete duels with this participant
+        # todo: submit outcome for each incomplete duel with this participant
 
     async def get_duel_outcomes(self, match_id: uuid.UUID, duel_id: uuid.UUID) -> list[DuelOutcome]:
         return await self.repository.get_duel_outcomes(match_id, duel_id)
