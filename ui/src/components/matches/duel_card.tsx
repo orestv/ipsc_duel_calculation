@@ -79,14 +79,15 @@ export default function DuelCard(params: DuelCardParams) {
         const outcomeDateString = outcomeDate.toLocaleTimeString('uk-UA', {hour12: false}) ?? ''
         return (
             <>
-                <span>{outcomeDateString}</span>
+                <p>{outcomeDateString}</p>
+                <p></p>
             </>
         )
     }
     const duelActions = (outcome?: DuelOutcome) => {
         if (outcome == undefined) {
             return (
-                <Button variant='primary' onClick={() => {
+                <Button size={"lg"} variant='primary' onClick={() => {
                     setShowModal(true)
                 }}>Судити</Button>
             )
@@ -118,13 +119,15 @@ export default function DuelCard(params: DuelCardParams) {
         <>
             <Card className={"my-3"}>
                 <Card.Header className='d-flex justify-content-between'>
+                    <h3>{params.duel.order}</h3>
                     {participantSpan(participantLeft, victoryState.left)}
                     {participantSpan(participantRight, victoryState.right)}
                 </Card.Header>
                 <Card.Body className='d-flex justify-content-between'>
-                    <Card.Title>{params.duel.order}</Card.Title>
-                    <Card.Subtitle>{duelOutcome(params.outcome)}</Card.Subtitle>
-                    {duelActions(params.outcome)}
+                    <Stack>
+                        <Card.Title>{duelOutcome(params.outcome)}</Card.Title>
+                        {duelActions(params.outcome)}
+                    </Stack>
                 </Card.Body>
             </Card>
             <OutcomeModal

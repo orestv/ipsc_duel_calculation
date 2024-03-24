@@ -136,23 +136,23 @@ class MatchService:
             if any (p for p in participant_ids if p in (d.left, d.right))
         ]
         participant_duels = [
-            d
+            (d, outcome)
             for d, outcome in participant_duels if not outcome or outcome.dummy
         ]
-        for duel in participant_duels:
+        for duel, old_outcome in participant_duels:
+            # make sure that previous DQs are not overwritten
+            old_dq = old_outcome.dq if old_outcome else OutcomeDQ(left=False, right=False)
             new_outcome = DuelOutcome(
                 duel_id=duel.id,
                 dummy=True,
                 dq=OutcomeDQ(
-                    left=duel.left in participant_ids,
-                    right=duel.right in participant_ids,
+                    left=old_dq.left or duel.left in participant_ids,
+                    right=old_dq.right or duel.right in participant_ids,
                 ),
                 victory=OutcomeVictory(left=False, right=False),
                 created_at=datetime.datetime.now(),
             )
             await self.repository.add_outcome(match.id, new_outcome)
-        # todo: find all incomplete duels with this participant
-        # todo: submit outcome for each incomplete duel with this participant
 
     async def get_duel_outcomes(self, match_id: uuid.UUID, duel_id: uuid.UUID) -> list[DuelOutcome]:
         return await self.repository.get_duel_outcomes(match_id, duel_id)
