@@ -3,7 +3,7 @@ import {useLoaderData} from "react-router-dom";
 import {MatchInProgress, MatchOutcomes} from "./models";
 import Navbar from "react-bootstrap/Navbar";
 import Container from "react-bootstrap/Container";
-import {Button, ButtonGroup, Col, Form, InputGroup, Row, Stack, ToggleButton} from "react-bootstrap";
+import {Button, ButtonGroup, Col, Form, InputGroup, Row, Spinner, Stack, ToggleButton} from "react-bootstrap";
 import DuelList from "./duel_list";
 import {fetchMatchInProgress, fetchMatchOutcomes, getMatchCompletion, getRangeCompletion} from "./match_service";
 import ProgressCounter from "./progress_counter";
@@ -35,11 +35,6 @@ export function MatchReferee(params: MatchRefereeParams) {
         }
     }
     const [match, setMatch] = useState(defaultMatch())
-    useEffect(() => {
-        (async () => {
-            setMatch(await fetchMatchInProgress(params.matchId))
-        })()
-    }, []);
 
     // state for fetching match outcomes, displays the match or something.
     const [outcomesStale, setOutcomesStale] = useState(false)
@@ -47,19 +42,20 @@ export function MatchReferee(params: MatchRefereeParams) {
         return {outcomes: {}}
     }
     const [outcomes, setOutcomes] = useState(defaultOutcomes())
-
     useEffect(() => {
         (async () => {
+            setMatch(await fetchMatchInProgress(params.matchId))
             setOutcomes(await fetchMatchOutcomes(params.matchId))
             setOutcomesStale(false)
         })()
     }, [outcomesStale]);
 
     const handleOutcomeRecorded = async () => {
-        setOutcomes(await fetchMatchOutcomes(params.matchId))
+        setOutcomesStale(true)
+        // setOutcomes(await fetchMatchOutcomes(params.matchId))
     }
 
-    const ranges = Object.keys(match.duels).map(Number)
+    const ranges = Object.keys(match.duels ?? {}).map(Number)
     const [selectedRange, setSelectedRange] = useState(1)
     const rangeButtons = []
     for (const r of ranges) {
