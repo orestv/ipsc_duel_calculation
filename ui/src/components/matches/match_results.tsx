@@ -143,9 +143,25 @@ function RangeClassResults(params: RangeClassResultsParams) {
             return 0
         }
     )
-    const topVictoryCounts = [...(new Set(
-            params.victories.map(v => v.victories)
-    ))].sort((a, b) => b - a).slice(0, 4)
+    let sortedVictoryCounts = [...(new Set(
+        params.victories.map(v => v.victories)
+    ))].sort((a, b) => b - a)
+
+    const getWinnerCount = (victoryCounts: number[]): number => {
+        return params.victories.filter(
+            v => victoryCounts.includes(v.victories)
+        ).length
+    }
+
+    const topVictoryCounts = sortedVictoryCounts.reduce(
+        (obj, next) => {
+            if (getWinnerCount(obj) < 4) {
+                obj.push(next)
+            }
+            return obj
+        },
+        [] as number[]
+    )
 
     const isCompleted = params.status.completed == params.status.total
 
