@@ -230,7 +230,10 @@ async def test_record_dq(test_client: AsyncTestClient, match_outcome_fixture: Ma
         assert lost_duel.id in outcome.outcomes
         duel_outcome = outcome.outcomes[lost_duel.id][-1]
         assert duel_outcome.dummy
-        assert duel_outcome.victory == OutcomeVictory(left=False, right=False)
+        assert duel_outcome.victory == OutcomeVictory(
+            left=lost_duel.left != disqualified_participant_id,
+            right=lost_duel.right != disqualified_participant_id,
+        )
 
 
 async def test_calculate_victories(test_client: AsyncTestClient, match_outcome_fixture: MatchOutcomeFixture):

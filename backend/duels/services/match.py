@@ -142,14 +142,19 @@ class MatchService:
         for duel, old_outcome in participant_duels:
             # make sure that previous DQs are not overwritten
             old_dq = old_outcome.dq if old_outcome else OutcomeDQ(left=False, right=False)
+            dq_left = old_dq.left or duel.left in participant_ids
+            dq_right = old_dq.right or duel.right in participant_ids
             new_outcome = DuelOutcome(
                 duel_id=duel.id,
                 dummy=True,
                 dq=OutcomeDQ(
-                    left=old_dq.left or duel.left in participant_ids,
-                    right=old_dq.right or duel.right in participant_ids,
+                    left=dq_left,
+                    right=dq_right,
                 ),
-                victory=OutcomeVictory(left=False, right=False),
+                victory=OutcomeVictory(
+                    left=not dq_left,
+                    right=not dq_right,
+                ),
                 created_at=datetime.datetime.now(),
             )
             await self.repository.add_outcome(match.id, new_outcome)
