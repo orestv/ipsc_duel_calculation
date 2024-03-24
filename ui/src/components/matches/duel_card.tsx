@@ -99,13 +99,14 @@ export default function DuelCard(params: DuelCardParams) {
     }
     const defaultShowModal = false
     const [showModal, setShowModal] = useState(defaultShowModal)
-    const handleClose = async (victory?: DuelVictory, dq?: DuelDQ) => {
-        if (victory != null || dq != null) {
+    const handleClose = async (victory?: DuelVictory, dq?: DuelDQ, reshoot?: boolean) => {
+        if (victory != null || dq != null || reshoot) {
             const outcome: DuelOutcome = {
                 duel_id: params.duel.id,
                 victory: victory,
                 dq: dq,
-                dummy: false,
+                reshoot: reshoot,
+                dummy: reshoot,
             }
             await recordOutcome(params.matchId, outcome)
             params.onOutcomeRecorded()
@@ -142,7 +143,7 @@ interface OutcomeModalParams {
     rightName: string
     show: boolean
     outcome?: DuelOutcome
-    onClose: (victory?: DuelVictory, dq?: DuelDQ) => void
+    onClose: (victory?: DuelVictory, dq?: DuelDQ, reshoot?: boolean) => void
 }
 
 enum Victory {
@@ -151,19 +152,15 @@ enum Victory {
     Right = "right",
 }
 
-interface DQ {
-    left: boolean
-    right: boolean
-}
-
 interface Judgement {
     victory?: DuelVictory
     dq?: DuelDQ
+    reshoot?: boolean
 }
 
 function OutcomeModal(params: OutcomeModalParams) {
     const parseVictory = (outcome: DuelOutcome): Victory => {
-        if (outcome == null) {
+        if (outcome?.victory == null) {
             return null
         }
         if (outcome.victory.right) {
@@ -190,21 +187,35 @@ function OutcomeModal(params: OutcomeModalParams) {
     const [dq, setDQ] = useState(defaultDQ)
     const handleDQChanged = (e: string[]) => {
         setDQ(e)
-
-        if (e.includes("left") && victory == Victory.Left) {
-            setVictory(Victory.None)
-        }
-        if (e.includes("right") && victory == Victory.Right) {
-            setVictory(Victory.None)
-        }
     }
+
+    const [reshoot, setReshoot] = useState(false)
 
     const defaultJudgement: Judgement = {}
     const [judgement, setJudgement] = useState(defaultJudgement)
 
     useEffect(() => {
+        setVictory(null)
+        setDQ([])
+    }, [reshoot]);
+
+    useEffect(() => {
+        if (dq.includes("left") && victory == Victory.Left) {
+            setVictory(Victory.None)
+        }
+        if (dq.includes("right") && victory == Victory.Right) {
+            setVictory(Victory.None)
+        }
+    }, [dq]);
+
+    useEffect(() => {
         let newJudgement: Judgement = {}
-        if (victory) {
+
+        if (reshoot) {
+            newJudgement.reshoot = true
+        } else if (dq.length > 0) {
+            newJudgement.dq = {left: dq.includes("left"), right: dq.includes("right")}
+        } else if (victory) {
             newJudgement.victory = {left: false, right: false}
             if (victory == Victory.Left) {
                 newJudgement.victory.left = true
@@ -213,28 +224,35 @@ function OutcomeModal(params: OutcomeModalParams) {
                 newJudgement.victory.right = true
             }
         }
-        if (dq.length > 0) {
-            newJudgement.dq = {left: dq.includes("left"), right: dq.includes("right")}
-        }
         setJudgement(newJudgement)
-        setCanSubmit(newJudgement.victory != null)
-    }, [victory, dq]);
+        setCanSubmit(newJudgement.victory != null || newJudgement.reshoot)
+    }, [victory, dq, reshoot]);
     const handleSubmit = (event: any) => {
         event.preventDefault()
         event.stopPropagation()
         params.onClose(
             judgement.victory,
             judgement.dq,
+            judgement.reshoot
         )
     }
 
     const [canSubmit, setCanSubmit] = useState(false)
 
     const handleHide = () => {
-        setVictory(parseVictory(params.outcome))
+        setReshoot(false)
         setDQ(defaultDQ)
-        params.onClose(null, null)
+        setVictory(parseVictory(params.outcome))
+        params.onClose()
     }
+
+    const defaultAccordionKey = (() => {
+        if (dq.length > 0)
+            return "dq"
+        if (reshoot)
+            return "reshoot"
+        return null
+    })()
 
     return (
         <Modal show={params.show} onHide={handleHide}>
@@ -244,7 +262,7 @@ function OutcomeModal(params: OutcomeModalParams) {
             <Modal.Body>
                 <OutcomeRender outcome={params.outcome} leftName={params.leftName} rightName={params.rightName}/>
             </Modal.Body>
-            <Modal.Footer className={" d-flex justify-content-between"}>
+            <Modal.Footer className={"d-flex justify-content-between"}>
                 <Form onSubmit={handleSubmit}>
                     <Form.Group className={"mb-3"}>
                         <ToggleButtonGroup
@@ -258,29 +276,30 @@ function OutcomeModal(params: OutcomeModalParams) {
                                 id={"win-left"}
                                 value={"left"}
                                 variant={"outline-success"}
-                                disabled={dq.includes("left")}
+                                disabled={dq.includes("left") || reshoot}
                                 checked={victory == Victory.Left}
                             >Перемога зліва</ToggleButton>
                             <ToggleButton
                                 id={"win-none"}
                                 value={"none"}
                                 variant={"outline-danger"}
+                                disabled={reshoot}
                                 checked={victory == Victory.None}
                             >Дві поразки</ToggleButton>
                             <ToggleButton
                                 id={"win-right"}
                                 value={"right"}
                                 variant={"outline-success"}
-                                disabled={dq.includes("right")}
+                                disabled={dq.includes("right") || reshoot}
                                 checked={victory == Victory.Right}
                             >Перемога справа</ToggleButton>
                         </ToggleButtonGroup>
                     </Form.Group>
                     <Accordion
-                        defaultActiveKey={dq.length > 0 ? "0" : null}
+                        defaultActiveKey={defaultAccordionKey}
                         className={"mt-5"}
                     >
-                        <AccordionItem eventKey={"0"}>
+                        <AccordionItem eventKey={"dq"}>
                             <Accordion.Header>DQ</Accordion.Header>
                             <Accordion.Body>
                                 <Form.Group className={"mb-3"}>
@@ -296,16 +315,38 @@ function OutcomeModal(params: OutcomeModalParams) {
                                             id={"dq-left"}
                                             value={"left"}
                                             variant={"outline-danger"}
+                                            disabled={reshoot}
                                             checked={dq.includes("left")}
                                         >DQ зліва</ToggleButton>
                                         <ToggleButton
                                             id={"dq-right"}
                                             value={"right"}
                                             variant={"outline-danger"}
+                                            disabled={reshoot}
                                             checked={dq.includes("right")}
                                         >DQ справа</ToggleButton>
                                     </ToggleButtonGroup>
                                 </Form.Group>
+                            </Accordion.Body>
+                        </AccordionItem>
+                        <AccordionItem eventKey={"reshoot"}>
+                            <Accordion.Header>Перестріл</Accordion.Header>
+                            <Accordion.Body>
+                                <ToggleButton
+                                    id={`reshoot-${params.outcome?.duel_id}`}
+                                    value={"reshoot"}
+                                    type={"checkbox"}
+                                    variant={"outline-info"}
+                                    className={"d-block w-100"}
+                                    checked={reshoot}
+                                    onChange={
+                                        (e) => {
+                                            setReshoot(e.currentTarget.checked)
+                                        }
+                                    }
+                                >
+                                    Перестріл
+                                </ToggleButton>
                             </Accordion.Body>
                         </AccordionItem>
                     </Accordion>
@@ -328,14 +369,17 @@ interface OutcomeRenderParams {
 function OutcomeRender(params: OutcomeRenderParams) {
     if (!params.outcome)
         return <>Дуель ще не відбулась</>
-
     let victoryText = ""
-    if (params.outcome.victory.left) {
-        victoryText = `Переміг зліва (${params.leftName}).`
-    } else if (params.outcome.victory.right) {
-        victoryText = `Переміг справа (${params.rightName}).`
-    } else {
-        victoryText = "Дві поразки."
+    if (params.outcome.victory) {
+        if (params.outcome.victory.left) {
+            victoryText = `Переміг зліва (${params.leftName}).`
+        } else if (params.outcome.victory.right) {
+            victoryText = `Переміг справа (${params.rightName}).`
+        } else {
+            victoryText = "Дві поразки."
+        }
+    } else if(params.outcome.reshoot) {
+        victoryText = "Перестріл."
     }
     let alertsDQ = []
     if (params.outcome.dq?.left) {

@@ -42,7 +42,7 @@ export function MatchReferee(params: MatchRefereeParams) {
     }, []);
 
     // state for fetching match outcomes, displays the match or something.
-    const [outcomesUpdated, setOutcomesUpdated] = useState(true)
+    const [outcomesStale, setOutcomesStale] = useState(false)
     const defaultOutcomes = (): MatchOutcomes => {
         return {outcomes: {}}
     }
@@ -51,9 +51,9 @@ export function MatchReferee(params: MatchRefereeParams) {
     useEffect(() => {
         (async () => {
             setOutcomes(await fetchMatchOutcomes(params.matchId))
-            setOutcomesUpdated(true)
+            setOutcomesStale(false)
         })()
-    }, [outcomesUpdated]);
+    }, [outcomesStale]);
 
     const handleOutcomeRecorded = async () => {
         setOutcomes(await fetchMatchOutcomes(params.matchId))
@@ -78,11 +78,10 @@ export function MatchReferee(params: MatchRefereeParams) {
         )
     }
 
-    const matchCompletionStatus = getMatchCompletion(
-        match, outcomes, {
-            range: selectedRange
-        }
-    )
+    const defaultMatchCompletion = getMatchCompletion(match, outcomes, {
+        range: selectedRange
+    })
+    const [matchCompletionStatus, setMatchCompletionStatus] = useState(defaultMatchCompletion)
     const getNextDuel = (): number => {
         for (const duel of match.duels[selectedRange] ?? []) {
             if (!(duel.id in outcomes.outcomes)) {
@@ -93,6 +92,11 @@ export function MatchReferee(params: MatchRefereeParams) {
     }
     useEffect(() => {
         setNextDuel(getNextDuel())
+        setMatchCompletionStatus(
+            getMatchCompletion(match, outcomes, {
+                range: selectedRange
+            })
+        )
     }, [outcomes, match]);
     const [nextDuel, setNextDuel] = useState(getNextDuel())
 

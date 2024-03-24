@@ -33,6 +33,7 @@ export interface DuelOutcome {
     victory: DuelVictory
     dq?: DuelDQ
     created_at?: Date
+    reshoot?: boolean
     dummy: boolean
 }
 

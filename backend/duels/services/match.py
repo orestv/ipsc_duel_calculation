@@ -125,7 +125,7 @@ class MatchService:
             for duel in duels:
 
                 outcome = await self._get_duel_outcome(duel, match_id)
-                if not outcome:
+                if not outcome or outcome.dummy:
                     continue
 
                 if outcome.dq:
@@ -134,10 +134,11 @@ class MatchService:
                     if outcome.dq.right:
                         participants[duel.right].dq = True
 
-                if outcome.victory.left:
-                    participants[duel.left].victories += 1
-                if outcome.victory.right:
-                    participants[duel.right].victories += 1
+                if outcome.victory:
+                    if outcome.victory.left:
+                        participants[duel.left].victories += 1
+                    if outcome.victory.right:
+                        participants[duel.right].victories += 1
 
         result = list(participants.values())
         for p in result:
