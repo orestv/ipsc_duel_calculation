@@ -177,19 +177,32 @@ function OutcomeModal(params: OutcomeModalParams) {
         setVictory(val)
     }
 
-    const defaultDQ: string[] = []
-    if (params.outcome?.dq?.left) {
-        defaultDQ.push("left")
+
+    const parseDQ = (outcome: DuelOutcome): string[] => {
+        const defaultDQ: string[] = []
+        if (!(params.outcome?.dq)) {
+            return []
+        }
+        if (params.outcome?.dq?.left) {
+            defaultDQ.push("left")
+        }
+        if (params.outcome?.dq?.right) {
+            defaultDQ.push("right")
+        }
+        return defaultDQ
     }
-    if (params.outcome?.dq?.right) {
-        defaultDQ.push("right")
-    }
-    const [dq, setDQ] = useState(defaultDQ)
+    const [dq, setDQ] = useState(parseDQ(params.outcome))
     const handleDQChanged = (e: string[]) => {
         setDQ(e)
     }
 
     const [reshoot, setReshoot] = useState(false)
+
+    // correctly load the state on startup
+    useEffect(() => {
+        setVictory(parseVictory(params.outcome))
+        setDQ(parseDQ(params.outcome))
+    }, [params.outcome]);
 
     const defaultJudgement: Judgement = {}
     const [judgement, setJudgement] = useState(defaultJudgement)
@@ -241,7 +254,7 @@ function OutcomeModal(params: OutcomeModalParams) {
 
     const handleHide = () => {
         setReshoot(false)
-        setDQ(defaultDQ)
+        setDQ([])
         setVictory(parseVictory(params.outcome))
         params.onClose()
     }
@@ -384,12 +397,12 @@ function OutcomeRender(params: OutcomeRenderParams) {
     let alertsDQ = []
     if (params.outcome.dq?.left) {
         alertsDQ.push(
-            <Alert variant={"danger"}>DQ: {params.leftName}</Alert>
+            <Alert key={"dqLeft"} variant={"danger"}>DQ: {params.leftName}</Alert>
         )
     }
     if (params.outcome.dq?.right) {
         alertsDQ.push(
-            <Alert variant={"danger"}>DQ: {params.rightName}</Alert>
+            <Alert key={"dqRight"} variant={"danger"}>DQ: {params.rightName}</Alert>
         )
     }
 
