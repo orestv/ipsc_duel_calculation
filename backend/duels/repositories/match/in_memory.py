@@ -27,6 +27,9 @@ class InMemoryMatchRepository:
     async def get_match(self, match_id: uuid.UUID) -> MatchInProgress:
         return self.matches[match_id]
 
+    async def update_match(self, match: MatchInProgress) -> None:
+        self.matches[match.id] = match
+
     async def add_outcome(self, match_id: uuid.UUID, outcome: DuelOutcome):
         match_outcomes = self.outcomes[match_id].outcomes
         if outcome.duel_id not in match_outcomes:

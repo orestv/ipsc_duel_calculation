@@ -23,6 +23,13 @@ class MongoMatchRepository(MatchRepository):
         await self.matches.insert_one(doc)
         return match.id
 
+    async def update_match(self, match: MatchInProgress) -> None:
+        try:
+            doc = match.dict()
+            await self.matches.update_one({"id": match.id}, {"$set": doc})
+        except Exception as e:
+            import logging; logging.exception(e)
+
     async def get_matches(self) -> list[MatchInProgress]:
         docs = self.matches.find()
         return [MatchInProgress.parse_obj(doc) async for doc in docs]

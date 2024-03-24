@@ -16,6 +16,9 @@ class MatchRepository:
     async def get_match(self, match_id: uuid.UUID) -> MatchInProgress:
         raise NotImplementedError
 
+    async def update_match(self, match: MatchInProgress) -> None:
+        raise NotImplementedError
+
     async def get_match_outcomes(self, match_id: uuid.UUID) -> MatchOutcomes:
         raise NotImplementedError
 

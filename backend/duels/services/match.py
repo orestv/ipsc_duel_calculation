@@ -95,6 +95,18 @@ class MatchService:
     async def record_outcome(self, match_id: uuid.UUID, outcome: DuelOutcome):
         outcome.created_at = datetime.datetime.now()
         await self.repository.add_outcome(match_id, outcome)
+        if outcome.reshoot:
+            match = await self.repository.get_match(match_id)
+            for rng, duels in match.duels.items():
+                found_duels = [d for d in duels if d.id == outcome.duel_id]
+                if not found_duels:
+                    continue
+                found_duel = found_duels[0]
+                reshoot_duel = found_duel.copy()
+                reshoot_duel.id = uuid.uuid4()
+                reshoot_duel.order = len(duels) + 1
+                match.duels[rng].append(reshoot_duel)
+            await self.repository.update_match(match)
 
     async def get_duel_outcomes(self, match_id: uuid.UUID, duel_id: uuid.UUID) -> list[DuelOutcome]:
         return await self.repository.get_duel_outcomes(match_id, duel_id)
