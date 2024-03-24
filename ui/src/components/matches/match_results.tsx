@@ -153,10 +153,10 @@ function RangeClassResults(params: RangeClassResultsParams) {
         (v) => {
             const isWinner = topVictoryCounts.includes(v.victories)
             let badge = <></>
-            if (isCompleted) {
-                if (v.dq) {
-                    badge = <Badge bg={"danger"}>dq</Badge>
-                } else if (isWinner) {
+            if (v.dq) {
+                badge = <Badge bg={"danger"}>dq</Badge>
+            } else if (isCompleted) {
+                if (isWinner) {
                     badge = <Badge bg={"success"}>Півфінал</Badge>
                 }
             }
