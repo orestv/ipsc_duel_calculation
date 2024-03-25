@@ -2,7 +2,7 @@ import React from "react";
 import Container from 'react-bootstrap/Container';
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
-import {NavLink, Outlet} from 'react-router-dom';
+import {NavLink, Outlet, redirect} from 'react-router-dom';
 
 
 export function DuelNavbar() {
@@ -22,7 +22,7 @@ export function DuelNavbar() {
     )
 }
 
-export default function Root() {
+export function RootComponent(){
     return (
         <>
             <DuelNavbar/>
