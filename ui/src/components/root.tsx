@@ -2,14 +2,16 @@ import React from "react";
 import Container from 'react-bootstrap/Container';
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
-import {NavLink, Outlet, redirect} from 'react-router-dom';
+import {NavLink, Outlet} from 'react-router-dom';
 
 
 export function DuelNavbar() {
     return (
-        <Navbar expand="md" className="bg-body-tertiary">
+        <Navbar expand="sm" className="bg-body-tertiary">
             <Container>
-                <Navbar.Brand>Дуелі</Navbar.Brand>
+                <Navbar.Brand>
+                    <h1>Дуелі</h1>
+                </Navbar.Brand>
                 <Navbar.Toggle aria-controls="basic-navbar-nav"/>
                 <Navbar.Collapse id="basic-navbar-nav">
                     <Nav className="me-auto">
