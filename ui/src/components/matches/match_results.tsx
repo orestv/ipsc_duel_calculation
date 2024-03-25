@@ -196,10 +196,11 @@ function RangeClassResults(params: RangeClassResultsParams) {
             <h2>{params.clazz} - рубіж №{params.range} <ProgressCounter status={params.status}/></h2>
             <Table>
                 <thead>
-                    {rows}
+                    <th>Учасник</th>
+                    <th>Перемог</th>
                 </thead>
                 <tbody>
-
+                    {rows}
                 </tbody>
             </Table>
         </>
