@@ -88,7 +88,7 @@ export default function App() {
         setShowMatchCreateModal(true)
     }
 
-    const [showMatchCreateModal, setShowMatchCreateModal] = useState(true)
+    const [showMatchCreateModal, setShowMatchCreateModal] = useState(false)
 
     const handleMatchCreateHide = async (submitted: boolean, result?: MatchCreateResult) => {
         setShowMatchCreateModal(false)

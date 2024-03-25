@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react";
 import Container from "react-bootstrap/Container";
-import {Button, Modal, Table} from "react-bootstrap";
+import {Button, Modal, Stack, Table} from "react-bootstrap";
 import {deleteMatch, fetchMatches, fetchMatchOutcomes, getMatchCompletion} from "./match_service";
 import {FaPlay, FaTrash} from "react-icons/fa";
 import {Link} from "react-router-dom";
@@ -62,17 +62,29 @@ export default function MatchList() {
 
     const rows = []
     for (const match of matches) {
-        const createdAt = match.created_at != null ? match.created_at.toLocaleString() : 'N/A'
+        const createdAt = match.created_at != null ? match.created_at.toLocaleString("uk-UA", {hour12: false}) : 'N/A'
         rows.push(
             <tr key={match.id}>
-                <td>{match.name}</td>
-                <td>{createdAt}</td>
-                <td><ProgressCounter status={statuses[match.id]}/></td>
                 <td>
-                    <Link className="m-1" to={`/matches/${match.id}`}>
-                        <Button><FaPlay/></Button>
-                    </Link>
-                    <Button className="m-1" variant="danger" onClick={buildMatchDeleteClickHandler(match.id)}><FaTrash/></Button>
+                    <Stack>
+                        <h2>{match.name} <ProgressCounter status={statuses[match.id]}/></h2>
+                        <span>{createdAt}</span>
+                    </Stack>
+                </td>
+                <td>
+                    <Stack direction={"horizontal"} gap={5}>
+                        <Link to={`/matches/${match.id}`}>
+                            <Button size={"lg"}><FaPlay/> Судити</Button>
+                        </Link>
+                        <Button
+                            variant="outline-danger"
+                            size={"sm"}
+                            onClick={buildMatchDeleteClickHandler(match.id)}
+                        >
+                            <FaTrash/>
+                            Видалити
+                        </Button>
+                    </Stack>
                 </td>
             </tr>
         )
@@ -80,14 +92,12 @@ export default function MatchList() {
 
     return (
         <>
-            <h1>Match list be here!</h1>
+            <h1>Матчі</h1>
             <Container>
-                <Table>
+                <Table striped>
                     <thead>
                     <tr>
                         <th>Назва</th>
-                        <th>Створено</th>
-                        <th>Статус</th>
                         <th>Дії</th>
                     </tr>
                     </thead>
