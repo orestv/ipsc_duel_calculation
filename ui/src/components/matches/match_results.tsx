@@ -185,8 +185,8 @@ function RangeClassResults(params: RangeClassResultsParams) {
             }
             return (
                 <tr key={v.participant.id}>
-                    <td>{v.participant.name}</td>
-                    <td>{v.victories} {badge}</td>
+                    <td>{v.participant.name} {badge}</td>
+                    <td>{v.victories}</td>
                 </tr>
             )
         }
