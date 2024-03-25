@@ -9,7 +9,7 @@ const HTMLWebpackPluginConfig = new HtmlWebpackPlugin({
 });
 const FaviconsWebpackPlugin = require('favicons-webpack-plugin')
 const FaviconsWebpackPluginConfig = new FaviconsWebpackPlugin({
-    logo: 'assets/favicon.png',
+    logo: 'static/favicon.png',
     mode: 'light',
 })
 
