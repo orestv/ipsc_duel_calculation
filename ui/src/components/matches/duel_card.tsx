@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from "react";
 import {DuelDQ, DuelOutcome, DuelVictory, MatchDuel} from "./models";
 import {
-    Accordion, AccordionItem, Alert,
+    Accordion, AccordionItem, Alert, Badge,
     Button,
     ButtonGroup,
     Card, Col,
@@ -58,19 +58,26 @@ export default function DuelCard(params: DuelCardParams) {
         right: getVictoryState(params.outcome != undefined, params.outcome?.victory?.right, params.outcome?.dq?.right),
     }
     const participantSpan = (name: string, vic: ParticipantVictoryState) => {
-        const color = (() => {
-            switch (vic) {
-                case ParticipantVictoryState.DQ:
-                    return 'text-danger fw-light'
-                case ParticipantVictoryState.Win:
-                    return 'text-success fw-bolder'
-                case ParticipantVictoryState.Loss:
-                    return 'text-muted fw-light'
-                case ParticipantVictoryState.NoRecord:
-                    return ''
-            }
-        })()
-        return <span className={`h3 ${color}`}>{name}</span>
+        let badge = <></>
+        let color = ""
+        switch (vic) {
+            case ParticipantVictoryState.DQ:
+                color = 'text-dark fw-light'
+                badge = <Badge bg={"dark"}>dq</Badge>
+                break
+            case ParticipantVictoryState.Win:
+                color =  'text-success fw-bolder'
+                badge = <Badge bg={"success"}>win</Badge>
+                break
+            case ParticipantVictoryState.Loss:
+                color =  'text-danger fw-light'
+                badge = <Badge bg={"danger"}>loss</Badge>
+                break
+            case ParticipantVictoryState.NoRecord:
+                color =  ''
+                break
+        }
+        return <span className={`h5 ${color}`}>{name} {badge}</span>
     }
     const duelOutcome = (outcome?: DuelOutcome) => {
         if (outcome == undefined) {
@@ -118,7 +125,7 @@ export default function DuelCard(params: DuelCardParams) {
 
     return (
         <>
-            <Card className={"my-3"}>
+            <Card className={"my-4"}>
                 <Card.Header className='d-flex justify-content-between'>
                     <p className={"h3"}>{params.duel.order}</p>
                     {participantSpan(participantLeft, victoryState.left)}
