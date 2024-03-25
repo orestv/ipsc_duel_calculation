@@ -3,7 +3,7 @@ import {useLoaderData} from "react-router-dom";
 import {MatchInProgress, MatchOutcomes} from "./models";
 import Navbar from "react-bootstrap/Navbar";
 import Container from "react-bootstrap/Container";
-import {Button, ButtonGroup, Col, Form, InputGroup, Row, Spinner, Stack, ToggleButton} from "react-bootstrap";
+import {Alert, Button, ButtonGroup, Col, Form, InputGroup, Row, Spinner, Stack, ToggleButton} from "react-bootstrap";
 import DuelList from "./duel_list";
 import {fetchMatchInProgress, fetchMatchOutcomes, getMatchCompletion, getRangeCompletion} from "./match_service";
 import ProgressCounter from "./progress_counter";
@@ -99,7 +99,7 @@ export function MatchReferee(params: MatchRefereeParams) {
     const [showResults, setShowResults] = useState(false)
 
     return <>
-        <Navbar sticky={"top"} expand={",d"} className={"bg-body-secondary"}>
+        <Navbar sticky={"top"} expand={"sm"} className={"bg-body-secondary"}>
             <Container fluid>
                 <Navbar.Brand>Наступна: {nextDuel}</Navbar.Brand>
                 <Form className={"d-flex"}>
