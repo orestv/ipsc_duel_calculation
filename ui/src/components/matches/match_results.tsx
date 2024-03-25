@@ -164,6 +164,8 @@ function RangeClassResults(params: RangeClassResultsParams) {
     )
 
     const isCompleted = params.status.completed == params.status.total
+    const isGroupExitNeeded = getWinnerCount(topVictoryCounts) > 4
+    const lastVictoryCount = topVictoryCounts[topVictoryCounts.length - 1]
 
     const rows = params.victories.map(
         (v) => {
@@ -173,7 +175,12 @@ function RangeClassResults(params: RangeClassResultsParams) {
                 badge = <Badge bg={"danger"}>dq</Badge>
             } else if (isCompleted) {
                 if (isWinner) {
-                    badge = <Badge bg={"success"}>Півфінал</Badge>
+                    if (isGroupExitNeeded && v.victories == lastVictoryCount) {
+                        badge = <Badge bg={"warning"}>Вихід з групи</Badge>
+                    } else {
+
+                        badge = <Badge bg={"success"}>Півфінал</Badge>
+                    }
                 }
             }
             return (
