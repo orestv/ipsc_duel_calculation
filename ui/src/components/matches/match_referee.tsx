@@ -100,21 +100,15 @@ export function MatchReferee(params: MatchRefereeParams) {
 
     return <>
         <Navbar sticky={"top"} expand={"sm"} className={"bg-body-secondary"}>
-            <Container fluid>
-                <Navbar.Brand>Наступна: {nextDuel}</Navbar.Brand>
-                <Form className={"d-flex"}>
-                    <InputGroup>
-                    </InputGroup>
-                    <InputGroup>
-                        <Button
-                            onClick={() => {
-                                setShowResults(true)
-                            }}
-                        >
-                            Результати <ProgressCounter status={matchCompletionStatus}/>
-                        </Button>
-                    </InputGroup>
-                </Form>
+            <Container fluid className={"justify-content-between"}>
+                <Navbar.Brand>Наступна дуель: <b>{nextDuel}</b></Navbar.Brand>
+                <Button
+                    onClick={() => {
+                        setShowResults(true)
+                    }}
+                >
+                    Результати <ProgressCounter status={matchCompletionStatus}/>
+                </Button>
             </Container>
         </Navbar>
         <Container fluid>
