@@ -99,7 +99,10 @@ export function MatchReferee(params: MatchRefereeParams) {
     const [showResults, setShowResults] = useState(false)
 
     return <>
-        <Navbar sticky={"top"} expand={"sm"} className={"bg-body-secondary"}>
+        <Navbar
+            sticky={"top"}
+            className={"bg-body-secondary"}
+        >
             <Container fluid className={"justify-content-between"}>
                 <Navbar.Brand>Наступна дуель: <b>{nextDuel}</b></Navbar.Brand>
                 <Button

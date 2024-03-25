@@ -5,18 +5,22 @@ import Navbar from 'react-bootstrap/Navbar';
 import {NavLink, Outlet} from 'react-router-dom';
 
 
-export function DuelNavbar() {
+export function RootNavbar() {
     return (
-        <Navbar expand="sm" className="bg-body-tertiary">
+        <Navbar className="bg-body-secondary mb-4">
             <Container>
                 <Navbar.Brand>
                     <h1>Дуелі</h1>
                 </Navbar.Brand>
                 <Navbar.Toggle aria-controls="basic-navbar-nav"/>
                 <Navbar.Collapse id="basic-navbar-nav">
-                    <Nav className="me-auto">
-                        <Nav.Link as={NavLink} to="/duels">Дуелі</Nav.Link >
-                        <Nav.Link as={NavLink} to="/matches">Матчі</Nav.Link >
+                    <Nav variant={"underline"} className="me-auto">
+                        <Nav.Item>
+                            <Nav.Link as={NavLink} to="/duels">Планування</Nav.Link >
+                        </Nav.Item>
+                        <Nav.Item>
+                            <Nav.Link as={NavLink} to="/matches">Суддівство</Nav.Link >
+                        </Nav.Item>
                     </Nav>
                 </Navbar.Collapse>
             </Container>
@@ -27,10 +31,8 @@ export function DuelNavbar() {
 export function RootComponent(){
     return (
         <>
-            <DuelNavbar/>
-            <Container>
-                <Outlet/>
-            </Container>
+            <RootNavbar/>
+            <Outlet/>
         </>
     )
 }

@@ -7,7 +7,7 @@ import {API_ROOT, getMatchSetupFromLocalStorage, saveMatchSetupToLocalStorage} f
 import Navbar from "react-bootstrap/Navbar";
 import {Button, Col, Row, Stack} from "react-bootstrap";
 import Container from "react-bootstrap/Container";
-import {FaDownload, FaPlus} from "react-icons/fa";
+import {FaDownload, FaPlus, FaTrash} from "react-icons/fa";
 import MatchCreateModal, {MatchCreateResult} from "./match_create_modal";
 import {useNavigate} from "react-router-dom";
 
@@ -119,28 +119,28 @@ export default function App() {
     }
 
     return (
-        <>
-            <Navbar className="bg-body-tertiary">
-                <div className="container-fluid d-flex">
-                    <h1>Дуелі</h1>
-                    <Button variant={"primary"}
-                            onClick={() => {
-                                setMatchLoaderVisible(true)
-                            }}>
-                        Додати список з Practicarms
-                    </Button>
-                    <Button variant={"outline-danger"}
-                            onClick={handleResetMatchClick}>Очистити
-                    </Button>
-                </div>
-            </Navbar>
-            <div className="container-fluid my-4">
-                <MatchLoader visible={isMatchLoaderVisible} onMatchLoaded={handleMatchLoaded}
-                             onCanceled={handleMatchLoaderCanceled}/>
-            </div>
-            <div className="container-fluid my-4">
-                <MatchSetup onMatchSetup={handleMatchSetup} matchSetup={matchSetup}/>
-            </div>
+        <Stack gap={2}>
+            <h1>Планування</h1>
+            <Container fluid className={"d-flex justify-content-between"}>
+                <Button variant={"primary"}
+                        onClick={() => {
+                            setMatchLoaderVisible(true)
+                        }}>
+                    <FaPlus/>
+                    Додати список з Practicarms
+                </Button>
+                <Button
+                    variant={"outline-danger"}
+                    onClick={handleResetMatchClick}
+                >
+                    <FaTrash/>
+                    Очистити
+                </Button>
+            </Container>
+            <MatchLoader
+                visible={isMatchLoaderVisible} onMatchLoaded={handleMatchLoaded}
+                onCanceled={handleMatchLoaderCanceled}/>
+            <MatchSetup onMatchSetup={handleMatchSetup} matchSetup={matchSetup}/>
             <Container className="my-4">
                 <h1>Дуелі</h1>
                 <Stack direction={"horizontal"} gap={3}>
@@ -159,6 +159,6 @@ export default function App() {
                 show={showMatchCreateModal}
                 onHide={handleMatchCreateHide}
             />
-        </>
+        </Stack>
     )
 }
