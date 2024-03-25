@@ -9,6 +9,7 @@ import {Button, Col, Row, Stack} from "react-bootstrap";
 import Container from "react-bootstrap/Container";
 import {FaDownload, FaPlus} from "react-icons/fa";
 import MatchCreateModal, {MatchCreateResult} from "./match_create_modal";
+import {useNavigate} from "react-router-dom";
 
 export default function App() {
     const [matchSetup, setMatchSetup] = useState(EmptyMatchSetupRequest())
@@ -90,6 +91,7 @@ export default function App() {
 
     const [showMatchCreateModal, setShowMatchCreateModal] = useState(false)
 
+    const navigate = useNavigate()
     const handleMatchCreateHide = async (submitted: boolean, result?: MatchCreateResult) => {
         setShowMatchCreateModal(false)
         if (!submitted || result == null) {
@@ -108,6 +110,12 @@ export default function App() {
                 body: JSON.stringify(requestBody),
             }
         )
+        if (response.status != 201) {
+            console.log(response.text())
+            return
+        }
+        const matchId = JSON.parse(await response.text()) as string
+        navigate(`/matches/${matchId}`)
     }
 
     return (
