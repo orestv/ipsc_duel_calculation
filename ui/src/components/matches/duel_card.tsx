@@ -61,16 +61,16 @@ export default function DuelCard(params: DuelCardParams) {
         const color = (() => {
             switch (vic) {
                 case ParticipantVictoryState.DQ:
-                    return 'text-muted'
+                    return 'text-danger fw-light'
                 case ParticipantVictoryState.Win:
-                    return 'text-success'
+                    return 'text-success fw-bolder'
                 case ParticipantVictoryState.Loss:
-                    return 'text-danger'
+                    return 'text-muted fw-light'
                 case ParticipantVictoryState.NoRecord:
                     return ''
             }
         })()
-        return <h3 className={color}>{name}</h3>
+        return <span className={`h3 ${color}`}>{name}</span>
     }
     const duelOutcome = (outcome?: DuelOutcome) => {
         if (outcome == undefined) {
@@ -120,7 +120,7 @@ export default function DuelCard(params: DuelCardParams) {
         <>
             <Card className={"my-3"}>
                 <Card.Header className='d-flex justify-content-between'>
-                    <h3>{params.duel.order}</h3>
+                    <p className={"h3"}>{params.duel.order}</p>
                     {participantSpan(participantLeft, victoryState.left)}
                     {participantSpan(participantRight, victoryState.right)}
                 </Card.Header>
