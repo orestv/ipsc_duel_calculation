@@ -5,7 +5,10 @@ import DuelsList from "./duels_list";
 import {EmptyMatchSetupRequest, Match, MatchSetupRequest, RangeSetupRequest} from "../models";
 import {API_ROOT, getMatchSetupFromLocalStorage, saveMatchSetupToLocalStorage} from "../storage";
 import Navbar from "react-bootstrap/Navbar";
-import {Button} from "react-bootstrap";
+import {Button, Col, Row, Stack} from "react-bootstrap";
+import Container from "react-bootstrap/Container";
+import {FaDownload, FaPlus} from "react-icons/fa";
+import MatchCreateModal, {MatchCreateResult} from "./match_create_modal";
 
 export default function App() {
     const [matchSetup, setMatchSetup] = useState(EmptyMatchSetupRequest())
@@ -82,8 +85,18 @@ export default function App() {
     }
 
     async function handleCreateMatchClicked() {
+        setShowMatchCreateModal(true)
+    }
+
+    const [showMatchCreateModal, setShowMatchCreateModal] = useState(true)
+
+    const handleMatchCreateHide = async (submitted: boolean, result?: MatchCreateResult) => {
+        setShowMatchCreateModal(false)
+        if (!submitted || result == null) {
+            return
+        }
         const requestBody = {
-            "name": "asdf",
+            "name": result.name,
             "duels": match,
         }
         const response = await fetch(
@@ -120,21 +133,24 @@ export default function App() {
             <div className="container-fluid my-4">
                 <MatchSetup onMatchSetup={handleMatchSetup} matchSetup={matchSetup}/>
             </div>
-            <div className="container-fluid my-4">
+            <Container className="my-4">
                 <h1>Дуелі</h1>
-                <div className="container-fluid my-4">
-                    <button type="button" className="btn btn-primary" onClick={handleExcelDownloadClicked}>Скачати
-                        відомість
-                    </button>
-                </div>
-                <div className="container-fluid my-4">
-                    <button type="button" className="btn btn-primary" onClick={handleCreateMatchClicked}>Створити матч
-                    </button>
-                </div>
-
-                <DuelsList match={match} isLoading={isLoading}/>
-            </div>
-
+                <Stack direction={"horizontal"} gap={3}>
+                    <Button variant={"primary"} onClick={handleExcelDownloadClicked}>
+                        <FaDownload/> Скачати відомість
+                    </Button>
+                    <Button variant={"primary"} onClick={handleCreateMatchClicked}>
+                        <FaPlus/> Створити матч
+                    </Button>
+                </Stack>
+                <Container className={"my-4"}>
+                    <DuelsList match={match} isLoading={isLoading}/>
+                </Container>
+            </Container>
+            <MatchCreateModal
+                show={showMatchCreateModal}
+                onHide={handleMatchCreateHide}
+            />
         </>
     )
 }
