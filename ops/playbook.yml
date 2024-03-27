@@ -41,7 +41,7 @@
         name: europe-central2-docker.pkg.dev/duelscalculator/duels-all/backend
         tag: latest
         source: pull
-#        force_source: true
+        force_source: true
 
     - name: Ensure gcloud credentials dir exists
       ansible.builtin.file:

@@ -18,7 +18,5 @@ build_frontend:
 	cd ui/dist && tar -cJf ../../dist/ui.tar.xz .
 
 .PHONY: deploy
-#deploy:
-#deploy: build
-deploy:
+deploy: build
 	ansible-playbook -i ops/inventory.yml ops/playbook.yml
