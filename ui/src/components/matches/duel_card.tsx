@@ -1,21 +1,21 @@
 import React, {useEffect, useState} from "react";
 import {DuelDQ, DuelOutcome, DuelVictory, MatchDuel} from "./models";
 import {
-    Accordion, AccordionItem, Alert, Badge,
+    Accordion,
+    AccordionItem,
+    Alert,
+    Badge,
     Button,
-    ButtonGroup,
-    Card, Col,
-    Form, InputGroup,
-    Modal, Row,
+    Card,
+    Form,
+    Modal,
     Stack,
     ToggleButton,
     ToggleButtonGroup
 } from "react-bootstrap";
 import {recordOutcome} from "./match_service";
-import {types} from "sass";
-import Boolean = types.Boolean;
 import Container from "react-bootstrap/Container";
-import {FaCross, FaEye, FaSave, FaWindowClose} from "react-icons/fa";
+import {FaEye, FaSave} from "react-icons/fa";
 
 export interface DuelCardParams {
     matchId: string,
