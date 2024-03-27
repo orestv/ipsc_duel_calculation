@@ -55,7 +55,9 @@ export function MatchReferee(params: MatchRefereeParams) {
         // setOutcomes(await fetchMatchOutcomes(params.matchId))
     }
 
-    const ranges = Object.keys(match.duels ?? {}).map(Number)
+    const ranges = Object.keys(match.duels ?? {}).map(Number).filter(
+        rng => match.duels[rng].length > 0
+    )
     const [selectedRange, setSelectedRange] = useState(1)
     const rangeButtons = []
     for (const r of ranges) {

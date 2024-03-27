@@ -34,11 +34,15 @@ enum ParticipantVictoryState {
     Win,
     Loss,
     DQ,
+    Reshoot,
 }
 
-function getVictoryState(outcome: boolean, win: boolean, dq: boolean): ParticipantVictoryState {
+function getVictoryState(outcome: boolean, win: boolean, dq: boolean, reshoot: boolean): ParticipantVictoryState {
     if (!outcome) {
         return ParticipantVictoryState.NoRecord
+    }
+    if (reshoot) {
+        return ParticipantVictoryState.Reshoot
     }
     if (dq) {
         return ParticipantVictoryState.DQ
@@ -54,8 +58,8 @@ export default function DuelCard(params: DuelCardParams) {
     const participantLeft = params.duel.leftName
     const participantRight = params.duel.rightName
     const victoryState: VictoryState = {
-        left: getVictoryState(params.outcome != undefined, params.outcome?.victory?.left, params.outcome?.dq?.left),
-        right: getVictoryState(params.outcome != undefined, params.outcome?.victory?.right, params.outcome?.dq?.right),
+        left: getVictoryState(params.outcome != undefined, params.outcome?.victory?.left, params.outcome?.dq?.left, params.outcome?.reshoot),
+        right: getVictoryState(params.outcome != undefined, params.outcome?.victory?.right, params.outcome?.dq?.right, params.outcome?.reshoot),
     }
     const participantSpan = (name: string, vic: ParticipantVictoryState) => {
         let badge = <></>
@@ -73,6 +77,9 @@ export default function DuelCard(params: DuelCardParams) {
                 color =  'text-danger fw-light'
                 badge = <Badge bg={"danger"}>loss</Badge>
                 break
+            case ParticipantVictoryState.Reshoot:
+                color = 'text-dark fw-light'
+                badge = <Badge bg={"info"}>re</Badge>
             case ParticipantVictoryState.NoRecord:
                 color =  ''
                 break
@@ -87,7 +94,7 @@ export default function DuelCard(params: DuelCardParams) {
         const outcomeDateString = outcomeDate.toLocaleTimeString('uk-UA', {hour12: false}) ?? ''
         return (
             <>
-                <p>{outcomeDateString}</p>
+                <p>Записано о {outcomeDateString}.</p>
                 <p></p>
             </>
         )
@@ -125,7 +132,7 @@ export default function DuelCard(params: DuelCardParams) {
 
     return (
         <>
-            <Card className={"my-4"}>
+            <Card className={"my-5"}>
                 <Card.Header className='d-flex justify-content-between'>
                     <p className={"h3"}>{params.duel.order}</p>
                     {participantSpan(participantLeft, victoryState.left)}
@@ -242,6 +249,13 @@ function OutcomeModal(params: OutcomeModalParams) {
 
         if (reshoot) {
             newJudgement.reshoot = true
+            if (params.show) {
+                params.onClose(
+                    newJudgement.victory,
+                    newJudgement.dq,
+                    newJudgement.reshoot,
+                )
+            }
         } else {
             if (dq.length > 0) {
                 newJudgement.dq = {left: dq.includes("left"), right: dq.includes("right")}
@@ -253,6 +267,13 @@ function OutcomeModal(params: OutcomeModalParams) {
                 }
                 if (victory == Victory.Right) {
                     newJudgement.victory.right = true
+                }
+                if (params.show) {
+                    params.onClose(
+                        newJudgement.victory,
+                        newJudgement.dq,
+                        newJudgement.reshoot,
+                    )
                 }
             }
         }
@@ -314,7 +335,7 @@ function OutcomeModal(params: OutcomeModalParams) {
                             Перестріл
                         </ToggleButton>
                     </Form.Group>
-                    <Form.Group className={"mb-3"}>
+                    <Form.Group className={"mb-5"}>
                         <ToggleButtonGroup
                             name={"victory"}
                             type={"radio"}
@@ -328,21 +349,30 @@ function OutcomeModal(params: OutcomeModalParams) {
                                 variant={"outline-success"}
                                 disabled={dq.includes("left") || reshoot}
                                 checked={victory == Victory.Left}
-                            >Перемога зліва</ToggleButton>
+                            >
+                                <p>Перемога зліва</p>
+                                <span className={"fw-bolder"}>{params.leftName}</span>
+                            </ToggleButton>
                             <ToggleButton
                                 id={"win-none"}
                                 value={"none"}
                                 variant={"outline-danger"}
                                 disabled={reshoot}
                                 checked={victory == Victory.None}
-                            >Дві поразки</ToggleButton>
+                                style={{display: "flex", alignItems: "center"}}
+                            >
+                                Дві поразки
+                            </ToggleButton>
                             <ToggleButton
                                 id={"win-right"}
                                 value={"right"}
                                 variant={"outline-success"}
                                 disabled={dq.includes("right") || reshoot}
                                 checked={victory == Victory.Right}
-                            >Перемога справа</ToggleButton>
+                            >
+                                <p>Перемога справа</p>
+                                <span className={"fw-bolder"}>{params.rightName}</span>
+                            </ToggleButton>
                         </ToggleButtonGroup>
                     </Form.Group>
                     <Accordion
@@ -382,7 +412,7 @@ function OutcomeModal(params: OutcomeModalParams) {
                     </Accordion>
                     <Container className={"mt-5 d-flex justify-content-between"}>
                         <Button size={"lg"} variant={"outline-dark"} onClick={handleHide}>Закрити</Button>
-                        <Button size={"lg"} disabled={!canSubmit} type={"submit"}><FaSave/> Зберегти результат</Button>
+                        <Button size={"lg"} disabled={!canSubmit} type={"submit"}><FaSave/> Зберегти</Button>
                     </Container>
                 </Form>
             </Modal.Footer>
