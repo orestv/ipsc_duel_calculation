@@ -3,21 +3,22 @@ import {MatchDuel, MatchOutcomes} from "./models";
 import {getMostRecentOutcomes} from "./match_service";
 import DuelCard from "./duel_card";
 
-export interface DuelListParams {
+export interface DuelListProps {
     matchId: string
     range: number
     duels: MatchDuel[]
     outcomes: MatchOutcomes
+    isStale: boolean
     onOutcomeRecorded: () => void
 }
 
-export default function DuelList(params: DuelListParams) {
-    const duels = params.duels
+export default function DuelList(props: DuelListProps) {
+    const duels = props.duels
     duels.sort((a, b) => {
         return a.order - b.order
     })
 
-    const mostRecentOutcomes = getMostRecentOutcomes(params.outcomes);
+    const mostRecentOutcomes = getMostRecentOutcomes(props.outcomes);
     const duelRows = []
 
     for (const duel of duels) {
@@ -25,10 +26,11 @@ export default function DuelList(params: DuelListParams) {
         duelRows.push(
             <DuelCard
                 key={duel.id}
-                matchId={params.matchId}
+                matchId={props.matchId}
                 duel={duel}
                 outcome={outcome}
-                onOutcomeRecorded={params.onOutcomeRecorded}
+                isStale={props.isStale}
+                onOutcomeRecorded={props.onOutcomeRecorded}
             />
         )
     }

@@ -8,7 +8,7 @@ import {
     Button,
     Card,
     Form,
-    Modal,
+    Modal, Spinner,
     Stack,
     ToggleButton,
     ToggleButtonGroup
@@ -21,6 +21,7 @@ export interface DuelCardParams {
     matchId: string,
     duel: MatchDuel
     outcome?: DuelOutcome
+    isStale: boolean
     onOutcomeRecorded: () => void
 }
 
@@ -100,6 +101,11 @@ export default function DuelCard(params: DuelCardParams) {
         )
     }
     const duelActions = (outcome?: DuelOutcome) => {
+        if (params.isStale) {
+            return <Button size={"lg"} variant={"primary"} disabled>
+                <Spinner/>
+            </Button>
+        }
         if (outcome == undefined) {
             return (
                 <Button size={"lg"} variant='primary' onClick={() => {
@@ -108,9 +114,9 @@ export default function DuelCard(params: DuelCardParams) {
             )
         }
         return (
-            <Button variant={'outline-secondary'} onClick={() => {
+            <Button size={"lg"} variant={'outline-secondary'} onClick={() => {
                 setShowModal(true)
-            }}><FaEye/> Переглянути</Button>
+            }}>Переглянути</Button>
         )
     }
     const defaultShowModal = false

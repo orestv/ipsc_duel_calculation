@@ -131,6 +131,7 @@ export function MatchReferee(params: MatchRefereeParams) {
                         range={selectedRange}
                         duels={match.duels[selectedRange] ?? []}
                         outcomes={outcomes}
+                        isStale={outcomesStale}
                         onOutcomeRecorded={handleOutcomeRecorded}
                     />
                 </Col>
