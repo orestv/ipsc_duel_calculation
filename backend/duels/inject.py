@@ -1,5 +1,6 @@
 import functools
 import os
+import typing
 
 import duels.services
 import duels.repositories
@@ -11,11 +12,21 @@ async def provide_match_repository() -> duels.repositories.MatchRepository:
     return match_repository
 
 
+def result_repository_factory(
+        results_path: typing.Optional[str] = None,
+        gcloud_credentials_path: typing.Optional[str] = None,
+) -> duels.repositories.ResultsRepository:
+    if gcloud_credentials_path:
+        return duels.repositories.GCloudRepository(gcloud_credentials_path)
+    if results_path:
+        return duels.repositories.LocalResultsRepository(results_path)
+    return duels.repositories.NoopResultRepository()
+
+
 async def provide_results_repository() -> duels.repositories.ResultsRepository:
     results_path = os.getenv("RESULTS_PATH")
-    if not results_path:
-        return duels.repositories.results.NoopResultRepository()
-    return duels.repositories.LocalResultsRepository(results_path)
+    gcloud_credentials_path = os.getenv("GCLOUD_CREDENTIALS_PATH")
+    return result_repository_factory(results_path, gcloud_credentials_path)
 
 
 async def provide_match_service(match_repository: duels.repositories.MatchRepository, results_repository: duels.repositories.results.ResultsRepository) -> duels.services.MatchService:
