@@ -9,13 +9,19 @@ import duels.model
 from duels.api_models import MatchCreate, MatchParticipant, MatchDuel, MatchInProgress, MatchOutcomes, DuelOutcome, \
     ParticipantVictories, OutcomeDQ, OutcomeVictory
 from duels.repositories import MatchRepository
+from duels.repositories.results import ResultsRepository
 
 
 class MatchService:
-    repository: MatchRepository
+    match_repo: MatchRepository
+    results_repo: ResultsRepository
 
-    def __init__(self, repository: MatchRepository):
-        self.repository = repository
+    def __init__(self,
+                 match_repository: MatchRepository,
+                 results_repository: ResultsRepository,
+             ):
+        self.match_repo = match_repository
+        self.results_repo = results_repository
 
     async def create_match(self, match: MatchCreate) -> uuid.UUID:
         all_duels = list(itertools.chain(
@@ -67,7 +73,7 @@ class MatchService:
             duels=match_duels,
             created_at=datetime.datetime.now(),
         )
-        match_id = await self.repository.add_match(match)
+        match_id = await self.match_repo.add_match(match)
         return match_id
 
     def _get_participant_id(self, name: str, clazz: duels.model.Class,
@@ -78,30 +84,33 @@ class MatchService:
         raise KeyError(f"participant {name} ({clazz}) not found")
 
     async def get_all_matches(self) -> list[MatchInProgress]:
-        return await self.repository.get_matches()
+        return await self.match_repo.get_matches()
 
     async def delete_match(self, match_id: uuid.UUID) -> None:
-        await self.repository.delete_match(match_id)
+        await self.match_repo.delete_match(match_id)
 
     async def get_match(self, match_id: uuid.UUID) -> MatchInProgress:
         try:
-            return await self.repository.get_match(match_id)
+            return await self.match_repo.get_match(match_id)
         except KeyError:
             raise litestar.exceptions.NotFoundException()
 
     async def get_match_outcomes(self, match_id: uuid.UUID) -> MatchOutcomes:
-        return await self.repository.get_match_outcomes(match_id)
+        return await self.match_repo.get_match_outcomes(match_id)
 
     async def record_outcome(self, match_id: uuid.UUID, outcome: DuelOutcome):
         outcome.created_at = datetime.datetime.now()
-        await self.repository.add_outcome(match_id, outcome)
+        await self.match_repo.add_outcome(match_id, outcome)
         if outcome.reshoot:
             await self._record_reshoot(match_id, outcome)
         elif outcome.dq:
             await self._record_dq(match_id, outcome)
 
+    async def backup_match(self, match_id: uuid.UUID):
+        import logging; logging.info("Backing up match %s", match_id)
+
     async def _record_reshoot(self, match_id, outcome):
-        match = await self.repository.get_match(match_id)
+        match = await self.match_repo.get_match(match_id)
         for rng, duels in match.duels.items():
             found_duels = [d for d in duels if d.id == outcome.duel_id]
             if not found_duels:
@@ -111,10 +120,10 @@ class MatchService:
             reshoot_duel.id = uuid.uuid4()
             reshoot_duel.order = len(duels) + 1
             match.duels[rng].append(reshoot_duel)
-        await self.repository.update_match(match)
+        await self.match_repo.update_match(match)
 
     async def _record_dq(self, match_id: uuid.UUID, outcome: DuelOutcome):
-        match = await self.repository.get_match(match_id)
+        match = await self.match_repo.get_match(match_id)
         dq_participant_ids = await self._get_dq_participant_ids(match, outcome)
         await self._disqualify_participant(match, dq_participant_ids, outcome.duel_id)
 
@@ -157,13 +166,13 @@ class MatchService:
                 ),
                 created_at=datetime.datetime.now(),
             )
-            await self.repository.add_outcome(match.id, new_outcome)
+            await self.match_repo.add_outcome(match.id, new_outcome)
 
     async def get_duel_outcomes(self, match_id: uuid.UUID, duel_id: uuid.UUID) -> list[DuelOutcome]:
-        return await self.repository.get_duel_outcomes(match_id, duel_id)
+        return await self.match_repo.get_duel_outcomes(match_id, duel_id)
 
     async def get_victories(self, match_id: uuid) -> list[ParticipantVictories]:
-        match = await self.repository.get_match(match_id)
+        match = await self.match_repo.get_match(match_id)
         participants = {
             p.id: ParticipantVictories(
                 participant_id=p.id,
@@ -199,7 +208,7 @@ class MatchService:
         return result
 
     async def _get_duel_outcome(self, duel, match_id) -> typing.Optional[DuelOutcome]:
-        duel_outcomes = await self.repository.get_duel_outcomes(match_id, duel.id)
+        duel_outcomes = await self.match_repo.get_duel_outcomes(match_id, duel.id)
         if not duel_outcomes:
             return None
         duel_outcomes = list(sorted(duel_outcomes, key=lambda o: o.created_at))

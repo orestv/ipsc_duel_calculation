@@ -4,10 +4,10 @@ import uuid
 
 import litestar
 import litestar.exceptions
-from litestar.di import Provide
-from litestar.exceptions import NotFoundException
-from litestar.response import File
-from litestar.status_codes import HTTP_500_INTERNAL_SERVER_ERROR
+import litestar.background_tasks
+import litestar.di
+import litestar.exceptions
+import litestar.response
 
 import duels
 import duels.comp
@@ -43,7 +43,7 @@ class DuelsController(litestar.Controller):
         return result
 
     @litestar.post("/excel", sync_to_thread=True)
-    def get_duels_excel(self, data: MatchSetup) -> File:
+    def get_duels_excel(self, data: MatchSetup) -> litestar.response.File:
         range_duels = self._generate_duels(data)
         with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as f:
             pass
@@ -51,7 +51,7 @@ class DuelsController(litestar.Controller):
         path = f.name
 
         comp_excel.deliver_excel(range_duels, path)
-        return File(path=path, filename="pairs.xlsx")
+        return litestar.response.File(path=path, filename="pairs.xlsx")
 
     def _generate_duels(self, match_setup: MatchSetup):
         result = {
@@ -74,8 +74,9 @@ class DuelsController(litestar.Controller):
 class MatchController(litestar.Controller):
     path = "/matches"
     dependencies = {
-        "match_repository": Provide(inject.provide_match_repository),
-        "match_service": Provide(inject.provide_match_service),
+        "match_repository": litestar.di.Provide(inject.provide_match_repository),
+        "results_repository": litestar.di.Provide(inject.provide_results_repository),
+        "match_service": litestar.di.Provide(inject.provide_match_service),
     }
 
     @litestar.post()
@@ -91,7 +92,7 @@ class MatchController(litestar.Controller):
         try:
             return await match_service.get_match(match_id)
         except KeyError:
-            raise NotFoundException()
+            raise litestar.exceptions.NotFoundException()
 
     @litestar.delete("/{match_id:uuid}")
     async def delete_match(self, match_id: uuid.UUID, match_service: MatchService) -> None:
@@ -101,6 +102,12 @@ class MatchController(litestar.Controller):
     async def record_outcome(self, match_id: uuid.UUID, duel_id: uuid.UUID, data: DuelOutcome,
                              match_service: MatchService) -> None:
         await match_service.record_outcome(match_id, data)
+        async def backup_match():
+            await match_service.backup_match(match_id)
+        return litestar.Response(
+            None,
+            background=litestar.background_tasks.BackgroundTask(backup_match),
+        )
 
     @litestar.get("/{match_id:uuid}/duels/{duel_id:uuid}/outcomes")
     async def get_outcomes(self, match_id: uuid.UUID, duel_id: uuid.UUID, match_service: MatchService) -> list[
