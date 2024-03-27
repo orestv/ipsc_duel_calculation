@@ -23,8 +23,8 @@ class GCloudRepository(ResultsRepository):
         self.bucket_name = bucket_name
 
     async def store(self, match_id: uuid.UUID, match_name: str, source_path: pathlib.Path):
-        result_dir = urllib.parse.quote_plus(f"{match_id}-{match_name}")
-        result_filename = urllib.parse.quote_plus(f"{datetime.datetime.now(self.tz)}.xlsx")
+        result_dir = f"{match_id}-{match_name}".replace('/', '_')
+        result_filename = f"{datetime.datetime.now(self.tz)}.xlsx".replace('/', '_')
         destination_path = aiopath.AsyncPath(result_dir, result_filename)
         async with aiohttp.ClientSession() as session:
             client = Storage(session=session)

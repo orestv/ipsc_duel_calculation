@@ -498,6 +498,9 @@ class ExcelWriter:
 
     def _write_duels(self, sheet: xlsxwriter.worksheet.Worksheet):
         sheet.write(
+            0, self._col_duel_number(), "#", self.fmt_header,
+        )
+        sheet.write(
             0, self._col_duel_participant(True), "Стрілець зліва", self.fmt_header
         )
         sheet.write(0, self._col_duel_result(True), "Перемога\nзліва", self.fmt_header)
@@ -510,7 +513,12 @@ class ExcelWriter:
 
         row_first, row_last = self._rows_duels()
         rows = range(row_first, row_last)
-        for row, duel in zip(rows, self.duels):
+        for duel_number, (row, duel) in enumerate(zip(rows, self.duels), 1):
+            sheet.write(
+                row,
+                self._col_duel_number(),
+                duel_number
+            )
             sheet.write(
                 row,
                 self._col_duel_participant(True),
@@ -595,7 +603,7 @@ class ExcelWriter:
             sheet.write(
                 row,
                 self._col_victory_count(),
-                f"""=SUMIF(A:A, {address}, B:B) + SUMIF(D:D, {address}, C:C)""",
+                f"""=SUMIF(B:B, {address}, C:C) + SUMIF(E:E, {address}, D:D)""",
                 fmt,
             )
 
@@ -640,24 +648,27 @@ class ExcelWriter:
     def _rows_participants(self) -> (int, int):
         return 1, self._participant_count() + 1
 
+    def _col_duel_number(self) -> int:
+        return 0
+
     def _col_duel_participant(self, left: bool) -> int:
         if left:
-            return 0
-        return 3
+            return 1
+        return 4
 
     def _col_duel_result(self, left: bool) -> int:
         if left:
-            return 1
-        return 2
+            return 2
+        return 3
 
     def _col_participant_class(self) -> int:
-        return 6
-
-    def _col_participant(self) -> int:
         return 7
 
-    def _col_victory_count(self) -> int:
+    def _col_participant(self) -> int:
         return 8
+
+    def _col_victory_count(self) -> int:
+        return 9
 
     def _rows_participant_class(self, clazz: Class) -> (int, int):
         start = None
