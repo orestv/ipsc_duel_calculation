@@ -107,7 +107,12 @@ class MatchService:
             await self._record_dq(match_id, outcome)
 
     async def backup_match(self, match_id: uuid.UUID):
-        import logging; logging.info("Backing up match %s", match_id)
+        match = await self.match_repo.get_match(match_id)
+        await self.results_repo.store(
+            match.id,
+            match.name,
+            "",
+        )
 
     async def _record_reshoot(self, match_id, outcome):
         match = await self.match_repo.get_match(match_id)

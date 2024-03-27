@@ -100,10 +100,12 @@ class MatchController(litestar.Controller):
 
     @litestar.post("/{match_id:uuid}/duels/{duel_id:uuid}/outcomes")
     async def record_outcome(self, match_id: uuid.UUID, duel_id: uuid.UUID, data: DuelOutcome,
-                             match_service: MatchService) -> None:
+                             match_service: MatchService) -> litestar.Response[None]:
         await match_service.record_outcome(match_id, data)
+
         async def backup_match():
             await match_service.backup_match(match_id)
+
         return litestar.Response(
             None,
             background=litestar.background_tasks.BackgroundTask(backup_match),

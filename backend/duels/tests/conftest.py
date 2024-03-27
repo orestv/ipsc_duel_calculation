@@ -1,4 +1,6 @@
 import dataclasses
+import os
+import pathlib
 import uuid
 
 import litestar.status_codes
@@ -12,11 +14,6 @@ from duels.api_models import MatchSetup, MatchInProgress, RangeSetup, ClassSetup
 from duels.model import Class
 
 
-@pytest.fixture(scope="session")
-async def test_client() -> AsyncTestClient:
-    return AsyncTestClient(app=app)
-
-
 @dataclasses.dataclass
 class MatchSetupFixture:
     match_setup: MatchSetup
@@ -28,6 +25,16 @@ class MatchOutcomeFixture:
     match_setup_fixture: MatchSetupFixture
     match_id: uuid.UUID
     match_in_progress: MatchInProgress
+
+
+@dataclasses.dataclass
+class ResultsStorageFixture:
+    results_path: str
+
+
+@pytest.fixture(scope="session")
+async def test_client() -> AsyncTestClient:
+    return AsyncTestClient(app=app)
 
 
 @pytest.fixture(scope="function")
@@ -73,3 +80,9 @@ async def match_outcome_fixture(test_client: AsyncTestClient, faker, match_setup
         match_id=match_id,
         match_in_progress=match_in_progress,
     )
+
+
+@pytest.fixture(scope="function")
+async def results_storage(tmp_path: pathlib.Path) -> ResultsStorageFixture:
+    os.environ["RESULTS_PATH"] = str(tmp_path)
+    return ResultsStorageFixture(results_path=str(tmp_path))

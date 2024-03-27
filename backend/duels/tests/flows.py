@@ -1,3 +1,6 @@
+import asyncio
+import os
+import pathlib
 import uuid
 
 from faker import Faker
@@ -7,7 +10,8 @@ from litestar.testing import AsyncTestClient
 from duels.api_models import Duels, MatchCreate, MatchInProgress, DuelOutcome, \
     OutcomeVictory, ParticipantVictories, OutcomeDQ, MatchDuel, MatchOutcomes
 from duels.model import Class, Range
-from duels.tests.conftest import MatchSetupFixture, MatchOutcomeFixture, match_setup_fixture, match_outcome_fixture
+from duels.tests.conftest import MatchSetupFixture, MatchOutcomeFixture, match_setup_fixture, match_outcome_fixture, \
+    ResultsStorageFixture
 
 
 async def test_match_empty(test_client: AsyncTestClient):
@@ -89,7 +93,6 @@ async def test_record_outcome(test_client: AsyncTestClient, match_outcome_fixtur
     assert outcome_get_response.status_code == litestar.status_codes.HTTP_200_OK
     fetched_outcomes = [DuelOutcome.parse_obj(x) for x in outcome_get_response.json()]
     assert len(fetched_outcomes) == 2
-
 
 async def test_record_reshoot(test_client: AsyncTestClient, match_outcome_fixture: MatchOutcomeFixture):
     range_1_duels = match_outcome_fixture.match_in_progress.duels[Range.First]
@@ -310,3 +313,33 @@ async def test_calculate_overwritten_victories(test_client: AsyncTestClient,
     assert len(victories) == len(match_outcome_fixture.match_in_progress.participants)
     fetched_victor = [v for v in victories if v.participant_id == victor.id][0]
     assert fetched_victor.victories == 18
+
+
+async def test_backup_local(
+        results_storage: ResultsStorageFixture,
+        test_client: AsyncTestClient,
+        match_outcome_fixture: MatchOutcomeFixture,
+):
+    assert len(os.listdir(results_storage.results_path)) == 0
+
+    range_1_duels = match_outcome_fixture.match_in_progress.duels[Range.First]
+
+    duel = range_1_duels[0]
+    outcome = DuelOutcome(
+        duel_id=duel.id,
+        victory=OutcomeVictory(left=True),
+        created_at=None,
+    )
+    outcome_url = f"/api/matches/{match_outcome_fixture.match_id}/duels/{duel.id}/outcomes"
+    outcome_create_response = await test_client.post(
+        outcome_url,
+        content=outcome.json(),
+    )
+    assert outcome_create_response.status_code == litestar.status_codes.HTTP_201_CREATED
+
+    await asyncio.sleep(0.5) # Ensure that the background task fired
+    match_directories = os.listdir(results_storage.results_path)
+    assert len(match_directories) == 1
+    first_dir = pathlib.Path(results_storage.results_path, match_directories[0])
+    first_dir_contents = os.listdir(first_dir)
+    assert len(first_dir_contents) == 1
