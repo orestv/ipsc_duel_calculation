@@ -12,13 +12,16 @@ import xlsxwriter.worksheet
 from duels.model import Participant, Class, Range, Duel
 
 
-def deliver_excel(duels: dict[Range, list[Duel]], path: str):
+ExcelInputType = typing.TypeVar("ExcelInputType", bound=dict[Range, list[Duel]])
+
+
+def deliver_excel(duels: ExcelInputType, path: str):
     writer = pd.ExcelWriter(path)
     range_participants = _get_participants_per_range(duels)
     all_participants = itertools.chain(*range_participants.values())
 
     _deliver_participants(all_participants, writer)
-    ranges = list(sorted(Range.__members__.values()))
+    ranges = [Range(r) for r in range_participants.keys()]
     for rng in ranges:
         _deliver_range_lists(rng, range_participants[rng], writer)
 
@@ -136,6 +139,7 @@ def _deliver_range_lists(
 def _deliver_range_pairs(
     range: Range, duels: typing.Iterable[Duel], excel_writer: pd.ExcelWriter
 ):
+
     df = (
         pd.DataFrame(
             [
@@ -183,14 +187,14 @@ def _deliver_all_groups(
     repeated_classes = [
         c
         for c in Class.__members__.values()
-        if c in range_classes[Range.First] and c in range_classes[Range.Second]
+        if all(c in range_class for range_class in range_classes.values())
     ]
     for clazz in repeated_classes:
         groups = {
             rng: [p for p in participants if p.clazz == clazz]
             for rng, participants in range_participants.items()
         }
-        _deliver_groups(groups[Range.First], groups[Range.Second], excel_writer)
+        _deliver_groups(groups.get(Range.First, {}), groups.get(Range.Second, {}), excel_writer)
 
 
 def _deliver_groups(
@@ -481,6 +485,17 @@ class ExcelWriter:
         self._write_participants(sheet)
         sheet.autofit()
 
+
+    def _render_victory(self, duel: Duel, left: bool) -> typing.Union[str, int]:
+        if not duel.victories:
+            return " " * 16
+        left_won, right_won = duel.victories
+        if left and left_won:
+            return 1
+        if not left and right_won:
+            return 1
+        return 0
+
     def _write_duels(self, sheet: xlsxwriter.worksheet.Worksheet):
         sheet.write(
             0, self._col_duel_participant(True), "Стрілець зліва", self.fmt_header
@@ -503,9 +518,21 @@ class ExcelWriter:
             )
             sheet.write(
                 row,
+                self._col_duel_result(True),
+                self._render_victory(duel, True)
+            )
+
+            sheet.write(
+                row,
                 self._col_duel_participant(False),
                 self._render_participant(duel.right),
             )
+            sheet.write(
+                row,
+                self._col_duel_result(False),
+                self._render_victory(duel, False)
+            )
+
 
         validation_rule = {
             "validate": "list",

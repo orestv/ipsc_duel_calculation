@@ -4,6 +4,7 @@ import uuid
 import pathlib
 import aiopath
 import pytz
+import shutil
 
 from duels.repositories.results import ResultsRepository
 
@@ -16,10 +17,13 @@ class LocalResultsRepository(ResultsRepository):
         self.workdir = os.path.abspath(path)
         pathlib.Path(self.workdir).mkdir(parents=True, exist_ok=True)
 
-    async def store(self, match_id: uuid.UUID, match_name: str, path: str):
+    async def store(self, match_id: uuid.UUID, match_name: str, source_path: pathlib.Path):
         match_directory = await self._ensure_directory(match_id, match_name)
-        result_filename = f"{datetime.datetime.now(self.tz)}.txt"
-        await aiopath.AsyncPath(match_directory, result_filename).touch(exist_ok=True)
+        result_filename = f"{datetime.datetime.now(self.tz)}.xlsx"
+        result_path = aiopath.AsyncPath(match_directory, result_filename)
+        shutil.copy(
+            source_path, str(result_path)
+        )
 
     async def _ensure_directory(self, match_id: uuid.UUID, match_name: str) -> aiopath.AsyncPath:
         dir_name = f"{match_id}_{match_name}"

@@ -1,4 +1,5 @@
 import datetime
+import functools
 import typing
 import uuid
 
@@ -82,6 +83,12 @@ class MatchInProgress(pydantic.BaseModel):
     participants_by_range: dict[duels.model.Range, list[uuid.UUID]]
     duels: dict[duels.model.Range, list[MatchDuel]]
     created_at: typing.Optional[datetime.datetime] = None
+
+    @functools.cached_property
+    def participants_dict(self) -> dict[uuid.UUID, MatchParticipant]:
+        return {
+            p.id: p for p in self.participants
+        }
 
 
 class MatchOutcomes(pydantic.BaseModel):

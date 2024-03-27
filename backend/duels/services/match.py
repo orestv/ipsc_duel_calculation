@@ -1,5 +1,7 @@
 import datetime
 import itertools
+import pathlib
+import tempfile
 import typing
 import uuid
 
@@ -7,6 +9,7 @@ import litestar.exceptions
 
 import duels.model
 import duels.comp
+import duels.comp_excel
 from duels.api_models import MatchCreate, MatchParticipant, MatchDuel, MatchInProgress, MatchOutcomes, DuelOutcome, \
     ParticipantVictories, OutcomeDQ, OutcomeVictory, MatchSetup
 from duels.repositories import MatchRepository
@@ -109,11 +112,42 @@ class MatchService:
 
     async def backup_match(self, match_id: uuid.UUID):
         match = await self.match_repo.get_match(match_id)
-        await self.results_repo.store(
-            match.id,
-            match.name,
-            "",
+        outcomes = await self.match_repo.get_match_outcomes(match_id)
+        with tempfile.NamedTemporaryFile(suffix='.xlsx', delete_on_close=False) as fp:
+            temp_excel_path = pathlib.Path(fp.name)
+
+            await self._store_backup(match, outcomes, temp_excel_path)
+
+            await self.results_repo.store(
+                match.id,
+                match.name,
+                temp_excel_path,
+            )
+
+    async def _store_backup(self, match: MatchInProgress, outcome: MatchOutcomes, destination: pathlib.Path):
+        all_duels: duels.comp_excel.ExcelInputType = {
+            rng: [
+                await self._get_duel(match, outcome, duel)
+                for duel in range_duels
+            ]
+            for rng, range_duels in match.duels.items()
+        }
+        duels.comp_excel.deliver_excel(all_duels, str(destination))
+
+    async def _get_duel(self, match: MatchInProgress, outcomes: MatchOutcomes, duel: MatchDuel) -> duels.model.Duel:
+        left, right = match.participants_dict[duel.left], match.participants_dict[duel.right]
+        outcome = await self._get_duel_outcome(duel, match.id, outcomes)
+        if outcome and outcome.victory:
+            victories = (outcome.victory.left, outcome.victory.right)
+        else:
+            victories = None
+
+        result = duels.model.Duel(
+            left=duels.model.Participant(left.name, duel.clazz),
+            right=duels.model.Participant(right.name, duel.clazz),
+            victories=victories,
         )
+        return result
 
     def generate_duels(self, match_setup: MatchSetup) -> dict[duels.model.Range, list[duels.model.Duel]]:
         result = {
@@ -204,8 +238,8 @@ class MatchService:
             for p in match.participants
         }
 
-        for duels in match.duels.values():
-            for duel in duels:
+        for range_duels in match.duels.values():
+            for duel in range_duels:
 
                 outcome = await self._get_duel_outcome(duel, match_id)
                 if not outcome:
@@ -230,8 +264,12 @@ class MatchService:
 
         return result
 
-    async def _get_duel_outcome(self, duel, match_id) -> typing.Optional[DuelOutcome]:
-        duel_outcomes = await self.match_repo.get_duel_outcomes(match_id, duel.id)
+    async def _get_duel_outcome(self, duel, match_id: uuid.UUID, match_outcomes: typing.Optional[MatchOutcomes] = None) -> typing.Optional[DuelOutcome]:
+        if match_outcomes:
+            duel_outcomes = match_outcomes.outcomes.get(duel.id, [])
+        else:
+            duel_outcomes = await self.match_repo.get_duel_outcomes(match_id, duel.id)
+
         if not duel_outcomes:
             return None
         duel_outcomes = list(sorted(duel_outcomes, key=lambda o: o.created_at))

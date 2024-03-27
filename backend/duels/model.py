@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import enum
+import typing
 
 
 class Category(str, enum.Enum):
@@ -50,6 +51,7 @@ class Participant:
 class Duel:
     left: Participant
     right: Participant
+    victories: typing.Optional[tuple[bool, bool]] = None
 
     def swapped(self) -> Duel:
         return Duel(self.right, self.left)
