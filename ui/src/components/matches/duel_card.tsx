@@ -259,6 +259,7 @@ function OutcomeModal(params: OutcomeModalParams) {
         setJudgement(newJudgement)
         setCanSubmit(newJudgement.reshoot || (newJudgement.victory != null))
     }, [victory, dq, reshoot]);
+
     const handleSubmit = (event: any) => {
         event.preventDefault()
         event.stopPropagation()
