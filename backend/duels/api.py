@@ -23,9 +23,15 @@ from .services import MatchService
 class DuelsController(litestar.Controller):
     path = "/duels"
 
+    dependencies = {
+        "match_repository": litestar.di.Provide(inject.provide_match_repository),
+        "results_repository": litestar.di.Provide(inject.provide_results_repository),
+        "match_service": litestar.di.Provide(inject.provide_match_service),
+    }
+
     @litestar.post(sync_to_thread=True)
-    def get_duels(self, data: MatchSetup) -> Duels:
-        result = self._generate_duels(data)
+    def get_duels(self, data: MatchSetup, match_service: MatchService) -> Duels:
+        result = match_service.generate_duels(data)
 
         result = Duels(
             ranges={
@@ -43,8 +49,8 @@ class DuelsController(litestar.Controller):
         return result
 
     @litestar.post("/excel", sync_to_thread=True)
-    def get_duels_excel(self, data: MatchSetup) -> litestar.response.File:
-        range_duels = self._generate_duels(data)
+    def get_duels_excel(self, data: MatchSetup, match_service: MatchService) -> litestar.response.File:
+        range_duels = match_service.generate_duels(data)
         with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as f:
             pass
 
@@ -52,23 +58,6 @@ class DuelsController(litestar.Controller):
 
         comp_excel.deliver_excel(range_duels, path)
         return litestar.response.File(path=path, filename="pairs.xlsx")
-
-    def _generate_duels(self, match_setup: MatchSetup):
-        result = {
-            rng: [
-                duels.comp.generate_duels(
-                    [
-                        duels.model.Participant(name, clazz)
-                        for name in clazz_setup.participants
-                    ],
-                    clazz_setup.times,
-                )
-                for clazz, clazz_setup in range_setup.classes.items()
-            ]
-            for rng, range_setup in match_setup.ranges.items()
-        }
-        result = {rng: duels.comp.merge_queues(d) for rng, d in result.items()}
-        return result
 
 
 class MatchController(litestar.Controller):

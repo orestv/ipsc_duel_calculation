@@ -6,8 +6,9 @@ import uuid
 import litestar.exceptions
 
 import duels.model
+import duels.comp
 from duels.api_models import MatchCreate, MatchParticipant, MatchDuel, MatchInProgress, MatchOutcomes, DuelOutcome, \
-    ParticipantVictories, OutcomeDQ, OutcomeVictory
+    ParticipantVictories, OutcomeDQ, OutcomeVictory, MatchSetup
 from duels.repositories import MatchRepository
 from duels.repositories.results import ResultsRepository
 
@@ -113,6 +114,23 @@ class MatchService:
             match.name,
             "",
         )
+
+    def generate_duels(self, match_setup: MatchSetup) -> dict[duels.model.Range, list[duels.model.Duel]]:
+        result = {
+            rng: [
+                duels.comp.generate_duels(
+                    [
+                        duels.model.Participant(name, clazz)
+                        for name in clazz_setup.participants
+                    ],
+                    clazz_setup.times,
+                )
+                for clazz, clazz_setup in range_setup.classes.items()
+            ]
+            for rng, range_setup in match_setup.ranges.items()
+        }
+        result = {rng: duels.comp.merge_queues(d) for rng, d in result.items()}
+        return result
 
     async def _record_reshoot(self, match_id, outcome):
         match = await self.match_repo.get_match(match_id)
