@@ -19,5 +19,6 @@ build_frontend:
 
 .PHONY: deploy
 #deploy:
-deploy: build
+#deploy: build
+deploy:
 	ansible-playbook -i ops/inventory.yml ops/playbook.yml
