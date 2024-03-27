@@ -232,11 +232,6 @@ function OutcomeModal(params: OutcomeModalParams) {
     const [judgement, setJudgement] = useState(defaultJudgement)
 
     useEffect(() => {
-        setVictory(null)
-        setDQ([])
-    }, [reshoot]);
-
-    useEffect(() => {
         const leftDQ = dq.includes("left")
         const rightDQ = dq.includes("right")
         if (leftDQ && victory == Victory.Left) {
@@ -261,6 +256,7 @@ function OutcomeModal(params: OutcomeModalParams) {
                     newJudgement.dq,
                     newJudgement.reshoot,
                 )
+                return
             }
         } else {
             if (dq.length > 0) {
@@ -280,6 +276,7 @@ function OutcomeModal(params: OutcomeModalParams) {
                         newJudgement.dq,
                         newJudgement.reshoot,
                     )
+                    return
                 }
             }
         }
