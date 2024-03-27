@@ -154,6 +154,7 @@ export default function DuelCard(params: DuelCardParams) {
             <OutcomeModal
                 onClose={handleClose}
                 show={showModal}
+                order={params.duel.order}
                 leftName={participantLeft}
                 rightName={participantRight}
                 outcome={params.outcome}
@@ -166,6 +167,7 @@ interface OutcomeModalParams {
     leftName: string
     rightName: string
     show: boolean
+    order: number
     outcome?: DuelOutcome
     onClose: (victory?: DuelVictory, dq?: DuelDQ, reshoot?: boolean) => void
 }
@@ -312,7 +314,7 @@ function OutcomeModal(params: OutcomeModalParams) {
     return (
         <Modal show={params.show} onHide={handleHide} animation={false} fullscreen>
             <Modal.Header closeButton>
-                <Modal.Title><b>{params.leftName}</b> vs <b>{params.rightName}</b></Modal.Title>
+                <Modal.Title>{params.order} <b>{params.leftName}</b> vs <b>{params.rightName}</b></Modal.Title>
             </Modal.Header>
             <Modal.Body>
                 <OutcomeRender outcome={params.outcome} leftName={params.leftName} rightName={params.rightName}/>
