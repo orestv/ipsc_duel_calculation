@@ -307,7 +307,7 @@ function OutcomeModal(params: OutcomeModalParams) {
     })()
 
     return (
-        <Modal show={params.show} onHide={handleHide}>
+        <Modal show={params.show} onHide={handleHide} animation={false} fullscreen>
             <Modal.Header closeButton>
                 <Modal.Title><b>{params.leftName}</b> vs <b>{params.rightName}</b></Modal.Title>
             </Modal.Header>
@@ -316,6 +316,41 @@ function OutcomeModal(params: OutcomeModalParams) {
             </Modal.Body>
             <Modal.Footer className={"d-flex justify-content-between"}>
                 <Form onSubmit={handleSubmit}>
+                    <Accordion
+                        defaultActiveKey={defaultAccordionKey}
+                        className={"mb-5"}
+                    >
+                        <AccordionItem eventKey={"dq"}>
+                            <Accordion.Header>DQ</Accordion.Header>
+                            <Accordion.Body>
+                                <Form.Group className={"mb-3"}>
+                                    <ToggleButtonGroup
+                                        name={"dq"}
+                                        type={"checkbox"}
+                                        defaultValue={dq}
+                                        size={"lg"}
+                                        className='d-flex justify-content-between'
+                                        onChange={handleDQChanged}
+                                    >
+                                        <ToggleButton
+                                            id={"dq-left"}
+                                            value={"left"}
+                                            variant={"outline-danger"}
+                                            disabled={reshoot}
+                                            checked={dq.includes("left")}
+                                        >DQ зліва</ToggleButton>
+                                        <ToggleButton
+                                            id={"dq-right"}
+                                            value={"right"}
+                                            variant={"outline-danger"}
+                                            disabled={reshoot}
+                                            checked={dq.includes("right")}
+                                        >DQ справа</ToggleButton>
+                                    </ToggleButtonGroup>
+                                </Form.Group>
+                            </Accordion.Body>
+                        </AccordionItem>
+                    </Accordion>
                     <Form.Group className={"mb-5"}>
                         <ToggleButton
                             id={`reshoot-${params.outcome?.duel_id}`}
@@ -375,41 +410,6 @@ function OutcomeModal(params: OutcomeModalParams) {
                             </ToggleButton>
                         </ToggleButtonGroup>
                     </Form.Group>
-                    <Accordion
-                        defaultActiveKey={defaultAccordionKey}
-                        className={"mt-5"}
-                    >
-                        <AccordionItem eventKey={"dq"}>
-                            <Accordion.Header>DQ</Accordion.Header>
-                            <Accordion.Body>
-                                <Form.Group className={"mb-3"}>
-                                    <ToggleButtonGroup
-                                        name={"dq"}
-                                        type={"checkbox"}
-                                        defaultValue={dq}
-                                        size={"lg"}
-                                        className='d-flex justify-content-between'
-                                        onChange={handleDQChanged}
-                                    >
-                                        <ToggleButton
-                                            id={"dq-left"}
-                                            value={"left"}
-                                            variant={"outline-danger"}
-                                            disabled={reshoot}
-                                            checked={dq.includes("left")}
-                                        >DQ зліва</ToggleButton>
-                                        <ToggleButton
-                                            id={"dq-right"}
-                                            value={"right"}
-                                            variant={"outline-danger"}
-                                            disabled={reshoot}
-                                            checked={dq.includes("right")}
-                                        >DQ справа</ToggleButton>
-                                    </ToggleButtonGroup>
-                                </Form.Group>
-                            </Accordion.Body>
-                        </AccordionItem>
-                    </Accordion>
                     <Container className={"mt-5 d-flex justify-content-between"}>
                         <Button size={"lg"} variant={"outline-dark"} onClick={handleHide}>Закрити</Button>
                         <Button size={"lg"} disabled={!canSubmit} type={"submit"}><FaSave/> Зберегти</Button>
