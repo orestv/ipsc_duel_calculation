@@ -89,6 +89,11 @@ class MatchController(litestar.Controller):
         except KeyError:
             raise litestar.exceptions.NotFoundException()
 
+    @litestar.get("/{match_id:uuid}/excel")
+    async def get_match_excel(self, match_id: uuid.UUID, match_service: MatchService) -> litestar.response.File:
+        excel_path = await match_service.get_match_excel(match_id)
+        return litestar.response.File(path=excel_path, filename=excel_path.name)
+
     @litestar.delete("/{match_id:uuid}")
     async def delete_match(self, match_id: uuid.UUID, match_service: MatchService) -> None:
         await match_service.delete_match(match_id)

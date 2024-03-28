@@ -79,6 +79,48 @@ export async function fetchMatchFromPracticarms(matchUrl: string): Promise<Match
     return JSON.parse(await response.text())
 }
 
+export async function fetchMatchExcel(matchId: string) {
+    const response = await fetch(
+        `${API_ROOT}/matches/${matchId}/excel`,
+    )
+    const responseBody = await response.blob()
+    const contentDisposition = response.headers.get("content-disposition")
+    const filename = getFileName(contentDisposition)
+    openFile(responseBody, filename)
+}
+
+function getFileName(disposition: string): string {
+    const utf8FilenameRegex = /filename\*=UTF-8''([\w%\-\.]+)(?:; ?|$)/i;
+    const asciiFilenameRegex = /^filename=(["']?)(.*?[^\\])\1(?:; ?|$)/i;
+
+    let fileName: string = null;
+    if (utf8FilenameRegex.test(disposition)) {
+      fileName = decodeURIComponent(utf8FilenameRegex.exec(disposition)[1]);
+    } else {
+      // prevent ReDos attacks by anchoring the ascii regex to string start and
+      //  slicing off everything before 'filename='
+      const filenameStart = disposition.toLowerCase().indexOf('filename=');
+      if (filenameStart >= 0) {
+        const partialDisposition = disposition.slice(filenameStart);
+        const matches = asciiFilenameRegex.exec(partialDisposition );
+        if (matches != null && matches[2]) {
+          fileName = matches[2];
+        }
+      }
+    }
+    return fileName;
+}
+
+export function openFile(responseBody: Blob, fileName: string) {
+    const url = URL.createObjectURL(new Blob([responseBody]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', fileName)
+    document.body.appendChild(link)
+    link.click()
+    link.parentNode.removeChild(link)
+}
+
 export async function recordOutcome(matchId: string, outcome: DuelOutcome) {
     await fetch(
         `${API_ROOT}/matches/${matchId}/duels/${outcome.duel_id}/outcomes`, {

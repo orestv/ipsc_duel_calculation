@@ -3,10 +3,10 @@ import React, {useEffect, useState} from "react";
 import {Link, useLoaderData} from "react-router-dom";
 import Navbar from "react-bootstrap/Navbar";
 import Container from "react-bootstrap/Container";
-import {Badge, Button, Modal, Table} from "react-bootstrap";
-import {FaArrowLeft, FaPlus} from "react-icons/fa";
+import {Badge, Button, Modal, Stack, Table} from "react-bootstrap";
+import {FaArrowLeft, FaDownload, FaPlus} from "react-icons/fa";
 import {CompletionStatus, MatchInProgress, MatchOutcomes, Participant, ParticipantVictories} from "./models";
-import {fetchParticipantVictories, getMatchCompletion} from "./match_service";
+import {fetchMatchExcel, fetchParticipantVictories, getMatchCompletion} from "./match_service";
 import {CLASSES} from "../../models";
 import ProgressCounter from "./progress_counter";
 
@@ -112,6 +112,10 @@ export function MatchResultsModal(params: MatchResultsModalParams) {
         }
     }
 
+    const handleExcelDownload = async () => {
+        await fetchMatchExcel(params.match.id)
+    }
+
     return (
         <Modal show={params.show} onHide={params.onHide}>
             <Modal.Header closeButton>
@@ -120,7 +124,12 @@ export function MatchResultsModal(params: MatchResultsModalParams) {
                 </Modal.Title>
             </Modal.Header>
             <Modal.Body>
-                {victoriesRows}
+                <Stack gap={2}>
+                    <Button onClick={handleExcelDownload}>
+                        <FaDownload/> Скачати відомість
+                    </Button>
+                    {victoriesRows}
+                </Stack>
             </Modal.Body>
         </Modal>
     )
@@ -196,8 +205,10 @@ function RangeClassResults(params: RangeClassResultsParams) {
             <h2>{params.clazz} - рубіж №{params.range} <ProgressCounter status={params.status}/></h2>
             <Table>
                 <thead>
-                    <th>Учасник</th>
-                    <th>Перемог</th>
+                    <tr>
+                        <th>Учасник</th>
+                        <th>Перемог</th>
+                    </tr>
                 </thead>
                 <tbody>
                     {rows}

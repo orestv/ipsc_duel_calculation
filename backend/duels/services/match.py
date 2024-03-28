@@ -1,11 +1,14 @@
 import datetime
 import itertools
 import pathlib
+import shutil
 import tempfile
 import typing
 import uuid
 
+import aiofiles.os
 import litestar.exceptions
+import pytz
 
 import duels.model
 import duels.comp
@@ -111,18 +114,30 @@ class MatchService:
             await self._record_dq(match_id, outcome)
 
     async def backup_match(self, match_id: uuid.UUID):
-        match = await self.match_repo.get_match(match_id)
-        outcomes = await self.match_repo.get_match_outcomes(match_id)
-        with tempfile.NamedTemporaryFile(suffix='.xlsx', delete_on_close=False) as fp:
-            temp_excel_path = pathlib.Path(fp.name)
-
-            await self._store_backup(match, outcomes, temp_excel_path)
-
+        temp_excel_path = await self.get_match_excel(match_id)
+        try:
+            match = await self.match_repo.get_match(match_id)
             await self.results_repo.store(
                 match.id,
                 match.name,
                 temp_excel_path,
             )
+        finally:
+            await aiofiles.os.remove(temp_excel_path)
+
+    async def get_match_excel(self, match_id: uuid.UUID) -> pathlib.Path:
+        match = await self.match_repo.get_match(match_id)
+        outcomes = await self.match_repo.get_match_outcomes(match_id)
+        tz = pytz.timezone("Europe/Kyiv")
+        now = datetime.datetime.now(tz)
+        with tempfile.NamedTemporaryFile(
+                prefix=f'{match.name}_{now.isoformat()}_`',
+                suffix='.xlsx',
+                delete=False, delete_on_close=False) as fp:
+            temp_excel_path = pathlib.Path(fp.name)
+
+            await self._store_backup(match, outcomes, temp_excel_path)
+        return temp_excel_path
 
     async def _store_backup(self, match: MatchInProgress, outcome: MatchOutcomes, destination: pathlib.Path):
         all_duels: duels.comp_excel.ExcelInputType = {

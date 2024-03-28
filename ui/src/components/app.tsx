@@ -11,7 +11,7 @@ import {FaDownload, FaPlus, FaTrash} from "react-icons/fa";
 import MatchCreateModal, {MatchCreateResult} from "./match_create_modal";
 import {useNavigate} from "react-router-dom";
 import {IoIosRadioButtonOn} from "react-icons/io";
-import {fetchMatchFromPracticarms} from "./matches/match_service";
+import {fetchMatchFromPracticarms, openFile} from "./matches/match_service";
 
 export default function App() {
     const [matchSetup, setMatchSetup] = useState(EmptyMatchSetupRequest())
@@ -78,13 +78,7 @@ export default function App() {
             }
         )
         const responseBody = await response.blob()
-        const url = URL.createObjectURL(new Blob([responseBody]))
-        const link = document.createElement('a')
-        link.href = url
-        link.setAttribute('download', 'duels.xlsx')
-        document.body.appendChild(link)
-        link.click()
-        link.parentNode.removeChild(link)
+        openFile(responseBody, "duels.xlsx")
     }
 
     async function handleCreateMatchClicked() {
