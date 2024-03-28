@@ -120,7 +120,7 @@ export default function App() {
         navigate(`/matches/${matchId}`)
     }
 
-    const [showMatchDownloadModal, setShowMatchDownloadModal] = useState(true)
+    const [showMatchDownloadModal, setShowMatchDownloadModal] = useState(false)
     const handleMatchDownloadModalHide = async (submitted: boolean, url?: string) => {
         setShowMatchDownloadModal(false)
         if (submitted) {
