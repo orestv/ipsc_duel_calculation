@@ -34,5 +34,5 @@ async def provide_match_service(match_repository: duels.repositories.MatchReposi
     return duels.services.MatchService(match_repository, results_repository)
 
 
-def provide_practicarms_repository() -> duels.repositories.PracticarmsRepository:
+async def provide_practicarms_repository() -> duels.repositories.PracticarmsRepository:
     return duels.repositories.PracticarmsRepository()

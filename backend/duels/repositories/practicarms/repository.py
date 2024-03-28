@@ -32,7 +32,10 @@ class PracticarmsRepository:
         async with aiohttp.ClientSession() as session:
             response = await session.get(url)
             body = await response.text(errors='replace')
-        parsed_webpage = BeautifulSoup(body)
+        parsed_webpage = BeautifulSoup(
+            body,
+            parser='html.parser',
+        )
         return parsed_webpage
 
     async def _parse_participants(self, parsed_webpage) -> list[dict]:
