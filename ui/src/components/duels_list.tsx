@@ -22,12 +22,14 @@ export default function DuelsList(props: DuelsListProps) {
         const duels = props.match.ranges[range] || []
 
         const rows = []
+        let orderNum = 1
         for (const duel of duels) {
-            rows.push(<tr key={duel.left.name + duel.right.name}>
+            rows.push(<tr key={orderNum + duel.left.name + duel.right.name}>
                 <td>{duel.left.name}</td>
                 <td>{duel.right.name}</td>
                 <td>{duel.clazz}</td>
             </tr>)
+            orderNum +=1
         }
 
         const tbody = <tbody>{rows}</tbody>

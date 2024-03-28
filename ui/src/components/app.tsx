@@ -1,15 +1,17 @@
-import React, {useEffect, useState} from "react";
+import React, {ChangeEvent, useEffect, useRef, useState} from "react";
 import MatchLoader from "./loader";
 import MatchSetup from "./match_setup";
 import DuelsList from "./duels_list";
 import {EmptyMatchSetupRequest, Match, MatchSetupRequest, RangeSetupRequest} from "../models";
 import {API_ROOT, getMatchSetupFromLocalStorage, saveMatchSetupToLocalStorage} from "../storage";
 import Navbar from "react-bootstrap/Navbar";
-import {Button, Col, Row, Stack} from "react-bootstrap";
+import {Button, Col, Form, InputGroup, Modal, Row, Stack} from "react-bootstrap";
 import Container from "react-bootstrap/Container";
 import {FaDownload, FaPlus, FaTrash} from "react-icons/fa";
 import MatchCreateModal, {MatchCreateResult} from "./match_create_modal";
 import {useNavigate} from "react-router-dom";
+import {IoIosRadioButtonOn} from "react-icons/io";
+import {fetchMatchFromPracticarms} from "./matches/match_service";
 
 export default function App() {
     const [matchSetup, setMatchSetup] = useState(EmptyMatchSetupRequest())
@@ -118,16 +120,31 @@ export default function App() {
         navigate(`/matches/${matchId}`)
     }
 
+    const [showMatchDownloadModal, setShowMatchDownloadModal] = useState(true)
+    const handleMatchDownloadModalHide = async (submitted: boolean, url?: string) => {
+        setShowMatchDownloadModal(false)
+        if (submitted) {
+            const fetchedMatchSetup = await fetchMatchFromPracticarms(url)
+            setMatchSetup(fetchedMatchSetup)
+        }
+    }
+
     return (
         <Stack gap={2}>
             <h1>Планування</h1>
             <Container fluid className={"d-flex justify-content-between"}>
-                <Button variant={"primary"}
+                <Button
+                    variant={"primary"}
+                    onClick={() => {setShowMatchDownloadModal(true)}}
+                >
+                    Скачати список з Practicarms
+                </Button>
+                <Button variant={"secondary"}
                         onClick={() => {
                             setMatchLoaderVisible(true)
                         }}>
                     <FaPlus/>
-                    Додати список з Practicarms
+                    Додати список з Practicarms вручну
                 </Button>
                 <Button
                     variant={"outline-danger"}
@@ -159,6 +176,65 @@ export default function App() {
                 show={showMatchCreateModal}
                 onHide={handleMatchCreateHide}
             />
+            <MatchDownloadModal show={showMatchDownloadModal} onHide={handleMatchDownloadModalHide}/>
         </Stack>
+    )
+}
+
+interface MatchDownloadModalProps {
+    show: boolean
+    onHide: (submit: boolean, url?: string) => void
+}
+
+interface DownloadFormState {
+    url: string
+}
+
+function MatchDownloadModal(props: MatchDownloadModalProps) {
+    const formRef = useRef(null)
+    const urlRef = useRef(null)
+
+    const defaultFormState: DownloadFormState = {url: ""}
+    const [formState, setFormState] = useState(defaultFormState)
+    const handleSubmit = async (event: any) => {
+        event.preventDefault()
+        const formData = new FormData(formRef.current)
+        const formDataObj = Object.fromEntries(formData.entries()) as {[key: string]: string}
+        let url = formDataObj["url"];
+        if (url == "") {
+            url = null
+        }
+        props.onHide(
+            true,
+            url,
+        )
+    }
+
+    return (
+        <Modal show={props.show} onHide={() => props.onHide(false, null)}>
+            <Form ref={formRef} onSubmit={handleSubmit}>
+
+                <Modal.Header closeButton>Скачати матч</Modal.Header>
+                <Modal.Body>
+                    <Form.Group>
+                        <Form.Label>Посилання на список учасників</Form.Label>
+                        <Form.Control
+                            ref={urlRef}
+                            name={"url"}
+                            placeholder={"https://practicarms.ua/event-5897-participants-duelnii-kubok-bandershtadtu-2024.html"}
+                        />
+                    </Form.Group>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button
+                    variant={"outline-dark"}
+                    onClick={() => {props.onHide(false)}}
+                >
+                    Закрити
+                </Button>
+                <Button type={"submit"} variant={"primary"}>Скачати</Button>
+                </Modal.Footer>
+            </Form>
+        </Modal>
     )
 }

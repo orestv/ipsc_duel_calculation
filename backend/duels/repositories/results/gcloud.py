@@ -2,13 +2,11 @@ import datetime
 import logging
 import pathlib
 import uuid
-import urllib.parse
 import aiofiles
 import aiohttp
 import aiopath
 
 import pytz
-from google.cloud import storage
 from gcloud.aio.storage import Storage
 
 from duels.repositories.results import ResultsRepository

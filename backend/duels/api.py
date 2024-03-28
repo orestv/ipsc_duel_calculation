@@ -17,6 +17,7 @@ from duels.api_models import MatchSetup, Participant, Duel, Duels, MatchInProgre
     ParticipantVictories, MatchOutcomes
 from . import comp_excel
 from . import inject
+from .repositories import PracticarmsRepository
 from .services import MatchService
 
 
@@ -27,6 +28,7 @@ class DuelsController(litestar.Controller):
         "match_repository": litestar.di.Provide(inject.provide_match_repository),
         "results_repository": litestar.di.Provide(inject.provide_results_repository),
         "match_service": litestar.di.Provide(inject.provide_match_service),
+        "practicarms_repository": litestar.di.Provide(inject.provide_practicarms_repository)
     }
 
     @litestar.post(sync_to_thread=True)
@@ -58,6 +60,10 @@ class DuelsController(litestar.Controller):
 
         comp_excel.deliver_excel(range_duels, path)
         return litestar.response.File(path=path, filename="pairs.xlsx")
+
+    @litestar.post("/practicarms")
+    async def get_duels_from_practicarms(self, data: duels.api_models.PracticarmsParseRequest, practicarms_repository: PracticarmsRepository) -> MatchSetup:
+        return await practicarms_repository.load(data.url)
 
 
 class MatchController(litestar.Controller):

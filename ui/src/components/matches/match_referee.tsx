@@ -95,7 +95,7 @@ export function MatchReferee(params: MatchRefereeParams) {
                 range: selectedRange
             })
         )
-    }, [outcomes, match]);
+    }, [outcomes, match, selectedRange]);
     const [nextDuel, setNextDuel] = useState(getNextDuel())
 
     const [showResults, setShowResults] = useState(false)

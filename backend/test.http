@@ -117,6 +117,13 @@ Content-Type: application/json
 GET http://localhost:4200/matches/c7d06b49-629b-49e5-b179-67d70f5432b4
 
 
+
+###
+POST http://localhost:4200/api/duels/practicarms
+Content-Type: application/json
+
+{"url": "https://practicarms.ua/event-5897-participants-duelnii-kubok-bandershtadtu-2024.html"}
+
 ###
 POST http://localhost:4200/matches
 Content-Type: application/json

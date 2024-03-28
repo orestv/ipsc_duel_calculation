@@ -19,7 +19,6 @@ export default function MatchCreateModal(props: MatchCreateModalProps) {
         event.preventDefault()
         const formData = new FormData(formRef.current)
         const formDataObj = Object.fromEntries(formData.entries()) as {[key: string]: string}
-        console.log(formDataObj)
         props.onHide(
             true,
             {name: formDataObj["name"]}

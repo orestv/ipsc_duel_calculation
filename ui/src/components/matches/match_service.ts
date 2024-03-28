@@ -9,6 +9,7 @@ import {
     Participant,
     ParticipantVictories
 } from "./models";
+import {MatchSetupRequest} from "../../models";
 
 export async function fetchMatches(): Promise<MatchInProgress[]> {
     const response = await fetch(
@@ -63,6 +64,17 @@ export async function fetchMatchOutcomes(matchId: string): Promise<MatchOutcomes
 export async function fetchParticipantVictories(matchId: string): Promise<ParticipantVictories[]> {
     const response = await fetch(
         `${API_ROOT}/matches/${matchId}/victories`
+    )
+    return JSON.parse(await response.text())
+}
+
+export async function fetchMatchFromPracticarms(matchUrl: string): Promise<MatchSetupRequest> {
+    const response = await fetch(
+        `${API_ROOT}/duels/practicarms`,
+        {
+            method: "POST",
+            body: JSON.stringify({"url": matchUrl})
+        }
     )
     return JSON.parse(await response.text())
 }

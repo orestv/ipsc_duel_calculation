@@ -1,9 +1,8 @@
-import functools
 import os
 import typing
 
-import duels.services
 import duels.repositories
+import duels.services
 
 
 async def provide_match_repository() -> duels.repositories.MatchRepository:
@@ -33,3 +32,7 @@ async def provide_results_repository() -> duels.repositories.ResultsRepository:
 
 async def provide_match_service(match_repository: duels.repositories.MatchRepository, results_repository: duels.repositories.results.ResultsRepository) -> duels.services.MatchService:
     return duels.services.MatchService(match_repository, results_repository)
+
+
+def provide_practicarms_repository() -> duels.repositories.PracticarmsRepository:
+    return duels.repositories.PracticarmsRepository()

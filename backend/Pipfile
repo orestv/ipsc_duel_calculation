@@ -12,10 +12,10 @@ xlsxwriter = "~=3.1.9"
 pandas = "~=2.2.0"
 numpy = "~=1.26.3"
 motor = "~=3.3.2"
-google-cloud-storage = "~=2.16.0"
 aiopath = "~=0.7.7"
 pytz = "~=2024.1"
 gcloud-aio-storage = "~=9.2.0"
+beautifulsoup5 = "~=4.12.3"
 
 [dev-packages]
 pytest = "~=8.1.1"
