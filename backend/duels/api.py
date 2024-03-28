@@ -2,6 +2,7 @@ import logging
 import tempfile
 import uuid
 
+import aiofiles.os
 import litestar
 import litestar.exceptions
 import litestar.background_tasks
@@ -51,15 +52,22 @@ class DuelsController(litestar.Controller):
         return result
 
     @litestar.post("/excel", sync_to_thread=True)
-    def get_duels_excel(self, data: MatchSetup, match_service: MatchService) -> litestar.response.File:
+    async def get_duels_excel(self, data: MatchSetup, match_service: MatchService) -> litestar.response.File:
         range_duels = match_service.generate_duels(data)
         with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as f:
             pass
 
         path = f.name
 
+        async def delete_file():
+            await aiofiles.os.remove(f.name)
+
         comp_excel.deliver_excel(range_duels, path)
-        return litestar.response.File(path=path, filename="pairs.xlsx")
+        return litestar.response.File(
+            path=path,
+            filename="pairs.xlsx",
+            background=litestar.background_tasks.BackgroundTask(delete_file),
+        )
 
     @litestar.post("/practicarms")
     async def get_duels_from_practicarms(self, data: duels.api_models.PracticarmsParseRequest, practicarms_repository: PracticarmsRepository) -> MatchSetup:
@@ -92,7 +100,14 @@ class MatchController(litestar.Controller):
     @litestar.get("/{match_id:uuid}/excel")
     async def get_match_excel(self, match_id: uuid.UUID, match_service: MatchService) -> litestar.response.File:
         excel_path = await match_service.get_match_excel(match_id)
-        return litestar.response.File(path=excel_path, filename=excel_path.name)
+        async def delete_file():
+            await aiofiles.os.remove(excel_path)
+
+        return litestar.response.File(
+            path=excel_path,
+            filename=excel_path.name,
+            background=litestar.background_tasks.BackgroundTask(delete_file),
+        )
 
     @litestar.delete("/{match_id:uuid}")
     async def delete_match(self, match_id: uuid.UUID, match_service: MatchService) -> None:
