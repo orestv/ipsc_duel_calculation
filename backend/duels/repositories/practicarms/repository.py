@@ -34,7 +34,6 @@ class PracticarmsRepository:
             body = await response.text(errors='replace')
         parsed_webpage = BeautifulSoup(
             body,
-            parser='html.parser',
         )
         return parsed_webpage
 
